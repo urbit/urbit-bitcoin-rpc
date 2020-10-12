@@ -3,7 +3,7 @@ const net = require('net');
 const bitcoin = require('bitcoinjs-lib')
 
 //var electrsHost = 'electrs';
-const electrsHosts = '127.0.0.1'
+const electrsHost = '127.0.0.1';
 const electrsPort = 50001;
 
 const app = express();
@@ -17,8 +17,21 @@ const addressToScriptHash = (address) => {
 };
 
 app.get('/addresses/balance/:address', (req, res) => {
+    const client = new net.Socket();
     const scriptHash = addressToScriptHash(req.params.address);
-    res.send(scriptHash);
+    const rpcCall = {jsonrpc: '2.0', id: 0, method: 'blockchain.scripthash.get_balance',
+                     params: [scriptHash]};
+
+    client.connect(electrsPort, electrsHost, () => {
+        client.write(JSON.stringify(rpcCall));
+        client.write('\r\n');
+    });
+    client.on('data', (data) => {
+        const ret = JSON.parse(data.toString());
+        console.log(ret);
+        res.send(ret);
+        client.destroy();
+    });
 });
 
 app.post('/electrum-rpc', (req, res) => {
