@@ -4,4 +4,4 @@ WORKDIR /app
 RUN npm install --save express bitcoinjs-lib
 ADD ./src ./src
 
-CMD ["node", "src/address.js"]
+CMD ["node", "src/server.js"]

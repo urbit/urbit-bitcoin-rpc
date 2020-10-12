@@ -7,3 +7,4 @@ let hash = bitcoin.crypto.sha256(script);
 let reversedHash = Buffer.from(hash.reverse());
 
 console.log(address, ' maps to ', reversedHash.toString('hex'));
+
