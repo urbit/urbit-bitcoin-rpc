@@ -3,8 +3,10 @@ const net = require('net');
 const bitcoin = require('bitcoinjs-lib')
 
 //var electrsHost = 'electrs';
-const electrsHost = '127.0.0.1';
-const electrsPort = 50001;
+const electrsHost = process.env.ELECTRS_HOST;
+const electrsPort = process.env.ELECTRS_PORT;
+console.log(electrsHost);
+console.log(electrsPort);
 
 const app = express();
 const port = 50002;
@@ -36,7 +38,7 @@ app.get('/addresses/balance/:address', (req, res) => {
 
 app.post('/electrum-rpc', (req, res) => {
     console.log(req);
-    res.send("done");
+    res.send("TODO: implement HTTP POST forwarding of requests");
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
