@@ -1,5 +1,5 @@
-# Docker Bitcoin
-Downloads the official binaries.
+# Docker Bitcoin & ElectRS
+Runs `bitcoind` and `electrs` inside one Docker network. Also runs a NodeJS proxy server to `electrs` RPC, so that it can accept HTTP calls.
 
 ## Auth Notes
 This uses `.cookie` authentication. To find the username and password for BTC RPC, open the `.cookie` file in the Bitcoin datadir. It has the format:
@@ -8,16 +8,22 @@ This uses `.cookie` authentication. To find the username and password for BTC RP
 
 ## Usage
 1. Have an external volume
-2. Pass that as a Docker volume (see `start.sh`)
+2. Set the appropriate directory variable in `start.sh`
 3. In `bitcoin.conf`:
 ```
 rpcallowip=0.0.0.0/0
 rpcbind=0.0.0.0
 ```
 
-## Other Apps
+### Build Docker Containers
+```
+build.sh
+```
 
-### Node Proxy Server (for `electrs`)
+### Run Docker Containers
 ```
-docker image build --rm -f js-proxy-electrs.Dockerfile -t js-proxy-electrs .
+start.sh
 ```
+
+## Proxy REST API
+* `/addresses/balance/ADDRESS`
