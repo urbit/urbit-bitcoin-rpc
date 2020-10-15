@@ -9,8 +9,9 @@ function cleanup() {
     echo ""
     echo "Stopping js-proxy server..."
     docker container stop js-proxy-electrs
-    echo "Stopping bitcoind..."
-    docker container stop bitcoind
+    echo "Stopping bitcoind with SIGINT so it can clean up..."
+    # gives bitcoind time to write everything to disk
+    docker kill --signal=SIGINT bitcoind
     echo "Stopping electrs..."
     docker container stop electrs
     echo "Deleting btc-network..."
@@ -30,6 +31,7 @@ docker container run --rm \
        --network btc-network \
        --name bitcoind \
        -d bitcoin-core
+echo "INFO: started bitcoind"
 
 # Start electrs
 docker container run --rm \
@@ -42,6 +44,7 @@ docker container run --rm \
        electrs -vvvv --daemon-rpc-addr "bitcoind:8332" --db-dir /home/user/db --timestamp \
        --electrum-rpc-addr 0.0.0.0:$ELECTRS_PORT \
        --jsonrpc-import
+echo "INFO: started electrs"
 
 # Start js-proxy server to electrs
 docker container run --rm \
@@ -51,8 +54,10 @@ docker container run --rm \
        -e ELECTRS_HOST=$ELECTRS_HOST -e ELECTRS_PORT=$ELECTRS_PORT \
        -d js-proxy-electrs
 
-echo "INFO: started bitcoind"
-echo "INFO: started electrs"
 echo "INFO: started js-proxy-electrs on port $PROXY_PORT"
+
+echo "INFO: BTC RPC auth"
+cat $BTC_DATADIR/.cookie
+echo ""
 echo "INFO: use monitor.sh to view process status"
 read -p  "hit CTRL+C to shutdown all processes..."
