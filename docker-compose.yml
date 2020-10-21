@@ -16,9 +16,6 @@ networks:
 volumes:
   bitcoin:
   electrs_db:
-secrets:
-  bitcoin_cookie:
-    file: ./cookiefile.secret
 services:
   bitcoind:
     build:
@@ -38,11 +35,8 @@ services:
         -rpcallowip=0.0.0.0/0
         -prune=0
         -rpccookiefile=/btc/.cookie
-    # -rpccookiefile=/run/secrets/bitcoin_cookie
     stop_signal: SIGINT
     stop_grace_period: 1m30s
-    secrets: 
-      - bitcoin_cookie
   electrs:
     build:
       # Use the packaged electrs Dockerfile from the submodule.
@@ -70,13 +64,6 @@ services:
         --electrum-rpc-addr 0.0.0.0:50001
         --jsonrpc-import
         --cookie-file=/home/user/.bitcoin/.cookie
-    # --cookie-file=/run/secrets/bitcoin_cookie
-    # secrets:
-    #   - source: bitcoin_cookie
-    #     # Not sure why electrs wants to run in a container as uid 1000:
-    #     uid: '1000'
-    #     gid: '1000'
-    #     mode: 0400
   js-proxy-electrs:
     build:
       context: .
