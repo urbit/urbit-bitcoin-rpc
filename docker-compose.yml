@@ -40,7 +40,7 @@ services:
         -rpccookiefile=/btc/.cookie
     # -rpccookiefile=/run/secrets/bitcoin_cookie
     stop_signal: SIGINT
-    stop_grace_period: 20s
+    stop_grace_period: 1m30s
     secrets: 
       - bitcoin_cookie
   electrs:
