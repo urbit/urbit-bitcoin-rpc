@@ -32,7 +32,7 @@ services:
     networks:
       - btc-network
     command: >-
-      ./bitcoin-0.20.1/bin/bitcoind
+      /opt/bitcoin/bin/bitcoind
         -datadir=/btc
         -rpcbind=0.0.0.0:8332
         -rpcallowip=0.0.0.0/0

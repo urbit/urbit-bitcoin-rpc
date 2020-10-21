@@ -17,12 +17,17 @@ rpcbind=0.0.0.0
 
 ### Build Docker Containers
 ```
-build.sh
+docker-compose build
 ```
 
 ### Run Docker Containers
 ```
-start.sh
+docker-compose up
+```
+
+### Retrieve rpc password
+```
+./get_rpc_password.sh
 ```
 
 ## Proxy REST API
