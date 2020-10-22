@@ -15,14 +15,22 @@ rpcallowip=0.0.0.0/0
 rpcbind=0.0.0.0
 ```
 
+### Data storage
+`docker-compose` creates volumes to store the bitcoin and electrs data. If you're already using a local directory for a full bitcoin node, edit the top of docker-compose.yml and change the volumes there to your local directoires you'd like to mount.
+
 ### Build Docker Containers
 ```
-build.sh
+docker-compose build
 ```
 
 ### Run Docker Containers
 ```
-start.sh
+docker-compose up
+```
+
+### Retrieve rpc password
+```
+./get_rpc_password.sh
 ```
 
 ## Proxy REST API

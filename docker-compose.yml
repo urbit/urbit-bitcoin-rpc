@@ -1,0 +1,77 @@
+---
+x-vars:
+  ## Volume paths
+  # These default to using a docker volume to store the 350G of bitcoin data.
+  # To use a local directory for bitcoin data, replace the "bitcoin:"
+  # with your path on the following two lines:
+  bitcoin_volume: &bitcoin_volume "bitcoin:/btc"
+  electrs_btc_volume: &electrs_btc_volume "bitcoin:/home/user/.bitcoin:ro"
+
+  # To use a local directory for the electrs database, replace "electrs_db:" below.
+  electrs_db_volume: &electrs_db_volume "electrs_db:/home/user/db"
+
+version: "3.5"
+networks:
+  btc-network:
+volumes:
+  bitcoin:
+  electrs_db:
+services:
+  bitcoind:
+    build:
+      context: .
+      dockerfile: docker/bitcoin.Dockerfile
+    ports:
+      - "8332:8332"
+      - "8333:8333"
+    volumes:
+      - *bitcoin_volume
+    networks:
+      - btc-network
+    command: >-
+      /opt/bitcoin/bin/bitcoind
+        -datadir=/btc
+        -rpcbind=0.0.0.0:8332
+        -rpcallowip=0.0.0.0/0
+        -prune=0
+        -rpccookiefile=/btc/.cookie
+    stop_signal: SIGINT
+    stop_grace_period: 1m30s
+  electrs:
+    build:
+      # Use the packaged electrs Dockerfile from the submodule.
+      context: ./electrs
+      dockerfile: Dockerfile
+    ports:
+      - "50001:50001"
+    volumes:
+      - *electrs_btc_volume
+      - *electrs_db_volume
+    networks:
+      - btc-network
+    # Override the user to run as root so we can access to cookie file.
+    # The btc volume should be mounted RO anyways.
+    user: "0:0"
+    working_dir: "/home/user"
+    environment:
+      HOME: "/home/user"
+    command: >-
+      electrs -vvvv
+        --daemon-rpc-addr "bitcoind:8332"
+        --db-dir /home/user/db
+        --blocks-dir /home/user/.bitcoin
+        --timestamp
+        --electrum-rpc-addr 0.0.0.0:50001
+        --jsonrpc-import
+        --cookie-file=/home/user/.bitcoin/.cookie
+  js-proxy-electrs:
+    build:
+      context: .
+      dockerfile: docker/js-proxy-electrs.Dockerfile
+    ports:
+      - "50002:50002"
+    networks:
+      - btc-network
+    environment:
+      ELECTRS_HOST: electrs
+      ELECTRS_PORT: 50001

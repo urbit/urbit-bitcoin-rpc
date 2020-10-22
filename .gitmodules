@@ -1,0 +1,3 @@
+[submodule "electrs"]
+	path = electrs
+	url = https://github.com/romanz/electrs.git
