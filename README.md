@@ -16,16 +16,35 @@ rpcbind=0.0.0.0
 ```
 
 ### Data storage
-`docker-compose` creates volumes to store the bitcoin and electrs data. If you're already using a local directory for a full bitcoin node, edit the top of docker-compose.yml and change the volumes there to your local directoires you'd like to mount.
+`docker-compose` creates volumes to store the bitcoin and electrs data. If you're already using a local directory for a full bitcoin node, edit the top of docker-compose.yml and change the volumes there to your local directories you'd like to mount.
+
+### Initialize `git` Modules
+```
+git submodule init
+git submodule update
+```
 
 ### Build Docker Containers
 ```
 docker-compose build
 ```
 
-### Run Docker Containers
+Once the containers are built, you can either run the system as a foreground process or as a daemon.
+#### Run in the Foreground
 ```
 docker-compose up
+
+# to stop, use Ctrl-c once: 
+# bitcoind will stop gracefully and write its cache to disk
+```
+
+#### Run as a Daemon
+```
+docker-compose up -d
+docker-compose logs -f
+
+# to stop, run
+docker-compose down
 ```
 
 ### Retrieve rpc password
@@ -34,4 +53,5 @@ docker-compose up
 ```
 
 ## Proxy REST API
-* `/addresses/balance/ADDRESS`
+* `/addresses/balance/:address`
+* `/addresses/utxos/:address`
