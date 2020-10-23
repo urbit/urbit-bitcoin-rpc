@@ -4,11 +4,11 @@ x-vars:
   # These default to using a docker volume to store the 350G of bitcoin data.
   # To use a local directory for bitcoin data, replace the "bitcoin:"
   # with your path on the following two lines:
-  bitcoin_volume: &bitcoin_volume "bitcoin:/btc"
-  electrs_btc_volume: &electrs_btc_volume "bitcoin:/home/user/.bitcoin:ro"
+  bitcoin_volume: &bitcoin_volume "/Volumes/sandisk/BTC:/btc"
+  electrs_btc_volume: &electrs_btc_volume "/Volumes/sandisk/BTC:/home/user/.bitcoin:ro"
 
   # To use a local directory for the electrs database, replace "electrs_db:" below.
-  electrs_db_volume: &electrs_db_volume "electrs_db:/home/user/db"
+  electrs_db_volume: &electrs_db_volume "/Volumes/sandisk/electrs:/home/user/db"
 
 version: "3.5"
 networks:
