@@ -24,6 +24,7 @@ const addressLookup = (rpcCall, res) => {
         client.write(JSON.stringify(rpcCall));
         client.write('\r\n');
     });
+    client.on('error', err => console.error(err));
     client.on('data', (data) => {
         const ret = JSON.parse(data.toString());
         console.log(ret);
