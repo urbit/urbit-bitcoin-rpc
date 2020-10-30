@@ -6,7 +6,15 @@ This uses `.cookie` authentication. To find the username and password for BTC RP
 * username: `__cookie__`
 * password: everything after `:`
 
-## Usage
+## Local Usage
+1. Have an external volume
+2. Set directories in `local-start.sh`
+3. In `bitcoin.conf`:
+```
+rpcallowip=127.0.0.1
+```
+
+## Docker Usage
 1. Have an external volume
 2. Set the appropriate directory variable in `start.sh`
 3. In `bitcoin.conf`:
