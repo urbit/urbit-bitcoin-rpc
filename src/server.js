@@ -24,7 +24,7 @@ const addressLookup = (rpcCall, res) => {
         client.write(JSON.stringify(rpcCall));
         client.write('\r\n');
     });
-    client.on('error', err => console.error(err));
+    client.on('error', err => {console.error(err); res.status(502.).end()});
     client.on('data', (data) => {
         const ret = JSON.parse(data.toString());
         console.log(ret);
@@ -45,6 +45,15 @@ app.get('/addresses/utxos/:address', (req, res) => {
     const scriptHash = addressToScriptHash(req.params.address);
     const id = 'get-address-utxos';
     const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent',
+                     params: [scriptHash]};
+    addressLookup(rpcCall, res);
+
+});
+
+app.get('/addresses/history/:address', (req, res) => {
+    const scriptHash = addressToScriptHash(req.params.address);
+    const id = 'get-address-history';
+    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history',
                      params: [scriptHash]};
     addressLookup(rpcCall, res);
 
