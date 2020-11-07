@@ -17,14 +17,24 @@ const addressToScriptHash = (address) => {
     return reversedHash.toString('hex');
 };
 
-const addressLookup = (rpcCall, res) => {
-    const client = new net.Socket();
+const addressLookup = (addr, rpcCall, res) => {
+    let scriptHash;
+    try {
+        scriptHash = addressToScriptHash(addr);
+    }
+    catch (e) {
+        console.log(e);
+        res.status(400).end();
+        return;
+    }
 
+    const client = new net.Socket();
     client.connect(electrsPort, electrsHost, () => {
-        client.write(JSON.stringify(rpcCall));
+        const rc = Object.assign({params: [scriptHash]})
+        client.write(JSON.stringify());
         client.write('\r\n');
     });
-    client.on('error', err => {console.error(err); res.status(502.).end()});
+    client.on('error', err => {console.error(err); res.status(502).end()});
     client.on('data', (data) => {
         const ret = JSON.parse(data.toString());
         console.log(ret);
@@ -34,28 +44,22 @@ const addressLookup = (rpcCall, res) => {
 };
 
 app.get('/addresses/balance/:address', (req, res) => {
-    const scriptHash = addressToScriptHash(req.params.address);
     const id = 'get-address-balance';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance',
-                     params: [scriptHash]};
-    addressLookup(rpcCall, res);
+    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance'};
+    addressLookup(req.params.address, rpcCall, res);
 });
 
 app.get('/addresses/utxos/:address', (req, res) => {
-    const scriptHash = addressToScriptHash(req.params.address);
     const id = 'get-address-utxos';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent',
-                     params: [scriptHash]};
-    addressLookup(rpcCall, res);
+    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
+    addressLookup(req.params.address, rpcCall, res);
 
 });
 
 app.get('/addresses/history/:address', (req, res) => {
-    const scriptHash = addressToScriptHash(req.params.address);
     const id = 'get-address-history';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history',
-                     params: [scriptHash]};
-    addressLookup(rpcCall, res);
+    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history'};
+    addressLookup(req.params.address, rpcCall, res);
 
 });
 
