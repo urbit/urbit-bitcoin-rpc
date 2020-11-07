@@ -30,8 +30,8 @@ const addressLookup = (addr, rpcCall, res) => {
 
     const client = new net.Socket();
     client.connect(electrsPort, electrsHost, () => {
-        const rc = Object.assign({params: [scriptHash]})
-        client.write(JSON.stringify());
+        const rc = Object.assign({params: [scriptHash]}, rpcCall);
+        client.write(JSON.stringify(rc));
         client.write('\r\n');
     });
     client.on('error', err => {console.error(err); res.status(502).end()});
