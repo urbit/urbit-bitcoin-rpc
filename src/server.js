@@ -65,17 +65,19 @@ const bRpc = (rpcCall) => {
     });
 };
 
-app.get('/addresses/balance/:address', (req, res) => {
-    const id = 'get-address-balance';
-    const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance'};
-    // TODO fix this name below
-    const rpcCall2 = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcoun'};
-    //    res.send(JSON.parse(data.toString()));
+/* withBlockCount
+   Merges BTC RPC blockcount into the electRS result
+   - eRpcCall: rpc call for electrs
+   - res: Express response to write to
+ */
+const withBlockCount = (addr, eRpcCall, res) => {
+    const bRpcCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
     let eRes;
-    eRpc(req.params.address, rpcCall1)
+    eRpc(addr, eRpcCall)
         .then(json => {
             eRes = json;
-            return bRpc(rpcCall2);
+            console.log(eRes);
+            return bRpc(bRpcCall);
         })
         .then(json => {
             res.send({...eRes, result: {...eRes.result, blockcount: json.result}});
@@ -84,29 +86,37 @@ app.get('/addresses/balance/:address', (req, res) => {
             console.log(err);
             res.status(err.code).end();
         });
+};
+
+app.get('/addresses/balance/:address', (req, res) => {
+    const id = 'get-address-balance';
+    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance'};
+    withBlockCount(req.params.address, rpcCall, res);
 });
 
-/*
 app.get('/addresses/utxos/:address', (req, res) => {
     const id = 'get-address-utxos';
     const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
-    eRpc(req.params.address, rpcCall, res, responseHandler(res));
-
+    withBlockCount(req.params.address, rpcCall, res);
 });
 
 app.get('/addresses/history/:address', (req, res) => {
     const id = 'get-address-history';
     const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history'};
-    eRpc(req.params.address, rpcCall, res, responseHandler(res));
-
+    withBlockCount(req.params.address, rpcCall, res);
 });
 
 app.get('/getblockcount', (req, res) => {
     const id = 'getblockcount';
     const rpcCall = {jsonrpc: '2.0', id, method: 'getblockcount'};
-    bRpc(rpcCall, res);
+    bRpc(rpcCall)
+        .then(json => {
+            res.send(json);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
 });
-
-*/
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
