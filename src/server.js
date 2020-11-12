@@ -103,8 +103,9 @@ app.get('/addresses/info/:address', (req, res) => {
             return eRpc(addr, rpcCall2);
         })
         .then(json => {
+            console.log(eRes);
             const used = eRes.result.length > 0 || json.result.length > 0;
-            eRes = {...eRes, result: {...eRes.result, used}};
+            eRes = {...eRes, result: {utxos: eRes.result, used}};
             console.log(eRes);
             return bRpc(bRpcCall);
         })
