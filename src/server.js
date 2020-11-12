@@ -88,6 +88,36 @@ const withBlockCount = (addr, eRpcCall, res) => {
         });
 };
 
+app.get('/addresses/info/:address', (req, res) => {
+    const addr = req.params.address;
+    const id = 'get-address-info';
+    const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
+    const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
+    const bRpcCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
+
+//    TODO: used but no utxos should have blank UTXOs, but doesn't
+    let eRes;
+    eRpc(addr, rpcCall1)
+        .then(json => {
+            eRes = json;
+            return eRpc(addr, rpcCall2);
+        })
+        .then(json => {
+            const used = eRes.result.length > 0 || json.result.length > 0;
+            eRes = {...eRes, result: {...eRes.result, used}};
+            console.log(eRes);
+            return bRpc(bRpcCall);
+        })
+        .then(json => {
+            res.send({...eRes, result: {...eRes.result, blockcount: json.result}});
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
+});
+
+/*
 app.get('/addresses/balance/:address', (req, res) => {
     const id = 'get-address-balance';
     const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance'};
@@ -105,6 +135,7 @@ app.get('/addresses/history/:address', (req, res) => {
     const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history'};
     withBlockCount(req.params.address, rpcCall, res);
 });
+*/
 
 app.get('/getblockcount', (req, res) => {
     const id = 'getblockcount';
