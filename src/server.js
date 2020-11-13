@@ -86,10 +86,8 @@ app.get('/addresses/info/:address', (req, res) => {
             return eRpc(addr, rpcCall2);
         })
         .then(json => {
-            console.log(eRes);
             const used = eRes.result.length > 0 || json.result.length > 0;
             eRes = {...eRes, result: {utxos: eRes.result, used}};
-            console.log(eRes);
             return bRpc(bRpcCall);
         })
         .then(json => {
@@ -102,7 +100,7 @@ app.get('/addresses/info/:address', (req, res) => {
 });
 
 app.get('/getblockcount', (req, res) => {
-    const id = 'getblockcount';
+    const id = 'get-block-count';
     const rpcCall = {jsonrpc: '2.0', id, method: 'getblockcount'};
     bRpc(rpcCall)
         .then(json => {
