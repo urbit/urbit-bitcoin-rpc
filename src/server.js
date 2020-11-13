@@ -1,11 +1,15 @@
 const express = require('express');
 const net = require('net');
 const bitcoin = require('bitcoinjs-lib');
+const request = require("request");
 
 //var electrsHost = 'electrs';
+const btcCookiePass = process.env.BTC_RPC_COOKIE_PASS;
+const btcRpcUrl = '127.0.0.1:8332/';
 const electrsHost = process.env.ELECTRS_HOST;
 const electrsPort = process.env.ELECTRS_PORT;
-console.log(`Electrs host: ${electrsHost}:${electrsPort}`);
+console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
+console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 
 const app = express();
 const port = 50002;
@@ -17,55 +21,95 @@ const addressToScriptHash = (address) => {
     return reversedHash.toString('hex');
 };
 
-const addressLookup = (addr, rpcCall, res) => {
-    let scriptHash;
-    try {
-        scriptHash = addressToScriptHash(addr);
-    }
-    catch (e) {
-        console.log(e);
-        res.status(400).end();
-        return;
-    }
+// electrs rpc
+const eRpc = (addr, rpcCall) => {
+    return new Promise((resolve, reject) => {
+        let scriptHash;
+        try { scriptHash = addressToScriptHash(addr); }
+        catch (e) { return reject({code: 400, msg: 'bad address to e-rpc'}); }
 
-    const client = new net.Socket();
-    client.connect(electrsPort, electrsHost, () => {
-        const rc = Object.assign({params: [scriptHash]}, rpcCall);
-        client.write(JSON.stringify(rc));
-        client.write('\r\n');
-    });
-    client.on('error', err => {console.error(err); res.status(502).end()});
-    client.on('data', (data) => {
-        const ret = JSON.parse(data.toString());
-        console.log(ret);
-        res.send(ret);
-        client.destroy();
+        const client = new net.Socket();
+        client.connect(electrsPort, electrsHost, () => {
+            const rc = Object.assign({params: [scriptHash]}, rpcCall);
+            client.write(JSON.stringify(rc));
+            client.write('\r\n');
+        });
+        client.on('error', err => { return reject({code: 502, msg: "e-rpc error"}); });
+        client.on('data', data => {
+            client.destroy();
+            resolve(JSON.parse(data.toString()));
+        });
     });
 };
 
-app.get('/addresses/balance/:address', (req, res) => {
-    const id = 'get-address-balance';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance'};
-    addressLookup(req.params.address, rpcCall, res);
+// btc rpc
+const bRpc = (rpcCall) => {
+    return new Promise((resolve, reject) => {
+        const headers = {
+            "content-type": "text/plain;"
+        };
+        const options = {
+            url: `http://__cookie__:${btcCookiePass}@${btcRpcUrl}`,
+            method: "POST",
+            headers: headers,
+            body: JSON.stringify(rpcCall)
+        };
+        const callback = (error, response, body) => {
+            if (!error && response.statusCode == 200) {
+                resolve(JSON.parse(body));
+            }
+            else { return reject({code: 502, msg: 'bad btc-rpc call'}); }
+        };
+        try { request(options, callback); }
+        catch (e) { return reject({code: 502}); }
+    });
+};
+
+/*
+  Composes 3 separate RPC calls to:
+    - electrs: listunspent
+    - electrs: get_history
+    - btc:     getblockcount
+  and packages the results into one RPC return
+*/
+app.get('/addresses/info/:address', (req, res) => {
+    const addr = req.params.address;
+    const id = 'get-address-info';
+    const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
+    const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
+    const bRpcCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
+
+    let eRes;
+    eRpc(addr, rpcCall1)
+        .then(json => {
+            eRes = json;
+            return eRpc(addr, rpcCall2);
+        })
+        .then(json => {
+            const used = eRes.result.length > 0 || json.result.length > 0;
+            eRes = {...eRes, result: {utxos: eRes.result, used}};
+            return bRpc(bRpcCall);
+        })
+        .then(json => {
+            res.send({...eRes, result: {...eRes.result, blockcount: json.result}});
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
 });
 
-app.get('/addresses/utxos/:address', (req, res) => {
-    const id = 'get-address-utxos';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
-    addressLookup(req.params.address, rpcCall, res);
-
-});
-
-app.get('/addresses/history/:address', (req, res) => {
-    const id = 'get-address-history';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history'};
-    addressLookup(req.params.address, rpcCall, res);
-
-});
-
-app.post('/electrum-rpc', (req, res) => {
-    console.log(req);
-    res.send("TODO: implement HTTP POST forwarding of requests");
+app.get('/getblockcount', (req, res) => {
+    const id = 'get-block-count';
+    const rpcCall = {jsonrpc: '2.0', id, method: 'getblockcount'};
+    bRpc(rpcCall)
+        .then(json => {
+            res.send(json);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
