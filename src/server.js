@@ -14,10 +14,6 @@ console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 const app = express();
 const port = 50002;
 
-const headers = {
-    "content-type": "text/plain;"
-};
-
 const addressToScriptHash = (address) => {
     let script = bitcoin.address.toOutputScript(address);
     let hash = bitcoin.crypto.sha256(script);
@@ -25,7 +21,7 @@ const addressToScriptHash = (address) => {
     return reversedHash.toString('hex');
 };
 
-
+// electrs rpc
 const eRpc = (addr, rpcCall) => {
     return new Promise((resolve, reject) => {
         let scriptHash;
@@ -46,8 +42,12 @@ const eRpc = (addr, rpcCall) => {
     });
 };
 
+// btc rpc
 const bRpc = (rpcCall) => {
     return new Promise((resolve, reject) => {
+        const headers = {
+            "content-type": "text/plain;"
+        };
         const options = {
             url: `http://__cookie__:${btcCookiePass}@${btcRpcUrl}`,
             method: "POST",
@@ -65,29 +65,13 @@ const bRpc = (rpcCall) => {
     });
 };
 
-/* withBlockCount
-   Merges BTC RPC blockcount into the electRS result
-   - eRpcCall: rpc call for electrs
-   - res: Express response to write to
- */
-const withBlockCount = (addr, eRpcCall, res) => {
-    const bRpcCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
-    let eRes;
-    eRpc(addr, eRpcCall)
-        .then(json => {
-            eRes = json;
-            console.log(eRes);
-            return bRpc(bRpcCall);
-        })
-        .then(json => {
-            res.send({...eRes, result: {...eRes.result, blockcount: json.result}});
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(err.code).end();
-        });
-};
-
+/*
+  Composes 3 separate RPC calls to:
+    - electrs: listunspent
+    - electrs: get_history
+    - btc:     getblockcount
+  and packages the results into one RPC return
+*/
 app.get('/addresses/info/:address', (req, res) => {
     const addr = req.params.address;
     const id = 'get-address-info';
@@ -95,7 +79,6 @@ app.get('/addresses/info/:address', (req, res) => {
     const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
     const bRpcCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
 
-//    TODO: used but no utxos should have blank UTXOs, but doesn't
     let eRes;
     eRpc(addr, rpcCall1)
         .then(json => {
@@ -117,26 +100,6 @@ app.get('/addresses/info/:address', (req, res) => {
             res.status(err.code).end();
         });
 });
-
-/*
-app.get('/addresses/balance/:address', (req, res) => {
-    const id = 'get-address-balance';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_balance'};
-    withBlockCount(req.params.address, rpcCall, res);
-});
-
-app.get('/addresses/utxos/:address', (req, res) => {
-    const id = 'get-address-utxos';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
-    withBlockCount(req.params.address, rpcCall, res);
-});
-
-app.get('/addresses/history/:address', (req, res) => {
-    const id = 'get-address-history';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.get_history'};
-    withBlockCount(req.params.address, rpcCall, res);
-});
-*/
 
 app.get('/getblockcount', (req, res) => {
     const id = 'getblockcount';
