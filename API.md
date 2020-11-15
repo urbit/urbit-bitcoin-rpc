@@ -9,4 +9,8 @@
     - `height`
     - `value`
 * `/getblockcount`
-  - `{blockcount: Number}`
+  - `Number`
+* `/getfee/:conf_target`
+  - `{"feerate": Number,"blocks": Number}}`
+* `/getrawtx/:txid`
+  - `RawTxHex`
