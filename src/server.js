@@ -65,6 +65,17 @@ const bRpc = (rpcCall) => {
     });
 };
 
+const jsonRespond = (rpcPromise, res) => {
+    rpcPromise
+        .then(json => {
+            res.send(json);
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
+};
+
 /*
   Composes 3 separate RPC calls to:
     - electrs: listunspent
@@ -102,14 +113,21 @@ app.get('/addresses/info/:address', (req, res) => {
 app.get('/getblockcount', (req, res) => {
     const id = 'get-block-count';
     const rpcCall = {jsonrpc: '2.0', id, method: 'getblockcount'};
-    bRpc(rpcCall)
-        .then(json => {
-            res.send(json);
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(err.code).end();
-        });
+    jsonRespond(bRpc(rpcCall), res);
+});
+
+app.get('/getfee/:conf_target', (req, res) => {
+    const id = 'get-fee';
+    const rpcCall = {jsonrpc: '2.0', id, method: 'estimatesmartfee',
+                     params: [parseInt(req.params.conf_target)]};
+    jsonRespond(bRpc(rpcCall), res);
+});
+
+app.get('/getrawtx/:txid', (req, res) => {
+    const id = 'get-raw-tx';
+    const rpcCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
+                     params: [req.params.txid]};
+    jsonRespond(bRpc(rpcCall), res);
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));

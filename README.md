@@ -1,4 +1,4 @@
-# Docker Bitcoin & ElectRS
+# Bitcoin & ElectRS
 *TODO*
 Make test vectors for these addresses:
 curl -v http://localhost:50002/addresses/info/bc1q59u5epktervh6fxqay2dlph0wxu9hjnx6v8n66
@@ -7,6 +7,10 @@ curl -v http://localhost:50002/addresses/info/bc1qglkc9zfcn04vcc88nn0ljtxcpu5uxf
 ::  first is an address w balance
 ::  second has no balance but is used
 ::  third is unused
+
+curl http://localhost:50002/getfee/1000
+curl http://localhost:50002/getrawtx/f107fd63c7b78df447dd4355d39e474786998d78ff1c152602fafe7e96c10e4d
+curl http://localhost:50002/getblockcount
 
 Runs `bitcoind` and `electrs` inside one Docker network. Also runs a NodeJS proxy server to `electrs` RPC, so that it can accept HTTP calls.
 
