@@ -126,7 +126,6 @@ app.get('/getblockandfee', (req, res) => {
             return bRpc(feeCall);
         })
         .then(json => {
-            console.log(json);
             // fee is per kilobyte, we want in bytes
             res.send({...json, result: {blockcount, fee: toSats(json.result.feerate / 1024)}});
         })
