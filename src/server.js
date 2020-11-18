@@ -21,6 +21,9 @@ const addressToScriptHash = (address) => {
     return reversedHash.toString('hex');
 };
 
+/* takes BTC amount, returns Satoshis */
+const toSats = (btc) => Math.ceil(btc * 100000000);
+
 // electrs rpc
 const eRpc = (addr, rpcCall) => {
     return new Promise((resolve, reject) => {
@@ -58,17 +61,18 @@ const bRpc = (rpcCall) => {
             if (!error && response.statusCode == 200) {
                 resolve(JSON.parse(body));
             }
-            else { return reject({code: 502, msg: 'bad btc-rpc call'}); }
+            else { return reject({code: 400, msg: 'bad btc-rpc call'}); }
         };
         try { request(options, callback); }
         catch (e) { return reject({code: 502}); }
     });
 };
 
-const jsonRespond = (rpcPromise, res) => {
+// takes a promise, transforms its JSON result, and responds
+const jsonRespond = (rpcPromise, transformer, res) => {
     rpcPromise
         .then(json => {
-            res.send(json);
+            res.send(transformer(json));
         })
         .catch(err => {
             console.log(err);
@@ -110,24 +114,38 @@ app.get('/addresses/info/:address', (req, res) => {
         });
 });
 
+app.get('/getblockandfee', (req, res) => {
+    const id = 'get-block-and-fee';
+    const blockCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
+    const feeCall = {jsonrpc: '2.0', id, method: 'estimatesmartfee',
+                     params: [1]};
+    let blockcount;
+    bRpc(blockCall)
+        .then(json => {
+            blockcount = json.result;
+            return bRpc(feeCall);
+        })
+        .then(json => {
+            // fee is per kilobyte, we want in bytes
+            res.send({...json, result: {blockcount, fee: toSats(json.result.feerate / 1024)}});
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
+});
+
 app.get('/getblockcount', (req, res) => {
     const id = 'get-block-count';
     const rpcCall = {jsonrpc: '2.0', id, method: 'getblockcount'};
-    jsonRespond(bRpc(rpcCall), res);
-});
-
-app.get('/getfee/:conf_target', (req, res) => {
-    const id = 'get-fee';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'estimatesmartfee',
-                     params: [parseInt(req.params.conf_target)]};
-    jsonRespond(bRpc(rpcCall), res);
+    jsonRespond(bRpc(rpcCall), (j) => j, res);
 });
 
 app.get('/getrawtx/:txid', (req, res) => {
     const id = 'get-raw-tx';
     const rpcCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
                      params: [req.params.txid]};
-    jsonRespond(bRpc(rpcCall), res);
+    jsonRespond(bRpc(rpcCall), (j) => j, res);
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));

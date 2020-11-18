@@ -8,9 +8,9 @@
     - `tx_hash`
     - `height`
     - `value`
+* `/getblockandfee`: returns blockcount and sats fee for 1 block conf
+  - {"blockcount": Number, "fee": Number (in sats)}
 * `/getblockcount`
   - `Number`
-* `/getfee/:conf_target`
-  - `{"feerate": Number,"blocks": Number}}`
 * `/getrawtx/:txid`
   - `RawTxHex`
