@@ -143,9 +143,13 @@ app.get('/getblockcount', (req, res) => {
 
 app.get('/getrawtx/:txid', (req, res) => {
     const id = 'get-raw-tx';
+    const txid = req.params.txid;
     const rpcCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
-                     params: [req.params.txid]};
-    jsonRespond(bRpc(rpcCall), (j) => j, res);
+                     params: [txid]};
+    const addTxId = (json) => {
+        return {...json, result: {rawtx: json.result, txid}};
+    }
+    jsonRespond(bRpc(rpcCall), addTxId, res);
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
