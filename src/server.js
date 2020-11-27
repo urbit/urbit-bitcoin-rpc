@@ -61,7 +61,10 @@ const bRpc = (rpcCall) => {
             if (!error && response.statusCode == 200) {
                 resolve(JSON.parse(body));
             }
-            else { return reject({code: 400, msg: 'bad btc-rpc call'}); }
+            else {
+                console.log(error);
+                return reject({code: 400, msg: 'bad btc-rpc call'});
+            }
         };
         try { request(options, callback); }
         catch (e) { return reject({code: 502}); }
@@ -84,7 +87,7 @@ const jsonRespond = (rpcPromise, transformer, res) => {
   Composes 3 separate RPC calls to:
     - electrs: listunspent
     - electrs: get_history
-    - btc:     getblockcount
+    - btc:     getblockcount,
   and packages the results into one RPC return
 */
 app.get('/addresses/info/:address', (req, res) => {
@@ -92,21 +95,44 @@ app.get('/addresses/info/:address', (req, res) => {
     const id = 'get-address-info';
     const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
     const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
-    const bRpcCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
+    const blockRpc = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
+    const timeRpc = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockstats', params: [["time"]]};
 
-    let eRes;
+    let utxos;
+    let used;
+    let block;
     eRpc(addr, rpcCall1)
         .then(json => {
-            eRes = json;
+            utxos = json.result;
             return eRpc(addr, rpcCall2);
         })
         .then(json => {
-            const used = eRes.result.length > 0 || json.result.length > 0;
-            eRes = {...eRes, result: {utxos: eRes.result, used}};
-            return bRpc(bRpcCall);
+            used = utxos.length > 0 || json.result.length > 0;
+            return bRpc(blockRpc);
         })
         .then(json => {
-            res.send({...eRes, result: {...eRes.result, blockcount: json.result}});
+            block = json.result;
+            const ps = utxos.map((u) => {
+                if (u.height == 0) {
+                    return 0;
+                }
+                else {
+                    let params = timeRpc.params;
+                    params.unshift(u.height);
+                    const call = {...timeRpc, params};
+                    console.log(call);
+                    return bRpc(call);
+                }
+            });
+            return Promise.all(ps);
+        })
+        .then(jsons => {
+            console.log(jsons);
+            for(let i=0; i<jsons.length; i++) {
+                utxos[i] = {...utxos[i], time: jsons[i].result.time};
+            }
+            console.log(utxos);
+            res.send({error: null, id, result: {utxos, block, used}});
         })
         .catch(err => {
             console.log(err);
