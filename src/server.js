@@ -114,7 +114,7 @@ app.get('/addresses/info/:address', (req, res) => {
             block = json.result;
             const ps = utxos.map((u) => {
                 if (u.height == 0) {
-                    return 0;
+                    return {result: {time: 0}};
                 }
                 else {
                     let params = timeRpc.params;
