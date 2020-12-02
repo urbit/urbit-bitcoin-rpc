@@ -114,24 +114,21 @@ app.get('/addresses/info/:address', (req, res) => {
             block = json.result;
             const ps = utxos.map((u) => {
                 if (u.height == 0) {
-                    return 0;
+                    return {result: {time: 0}};
                 }
                 else {
                     let params = timeRpc.params;
                     params.unshift(u.height);
                     const call = {...timeRpc, params};
-                    console.log(call);
                     return bRpc(call);
                 }
             });
             return Promise.all(ps);
         })
         .then(jsons => {
-            console.log(jsons);
             for(let i=0; i<jsons.length; i++) {
-                utxos[i] = {...utxos[i], time: jsons[i].result.time};
+                utxos[i] = {...utxos[i], recvd: jsons[i].result.time};
             }
-            console.log(utxos);
             res.send({error: null, id, result: {utxos, block, used}});
         })
         .catch(err => {
@@ -145,15 +142,15 @@ app.get('/getblockandfee', (req, res) => {
     const blockCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
     const feeCall = {jsonrpc: '2.0', id, method: 'estimatesmartfee',
                      params: [1]};
-    let blockcount;
+    let block;
     bRpc(blockCall)
         .then(json => {
-            blockcount = json.result;
+            block = json.result;
             return bRpc(feeCall);
         })
         .then(json => {
             // fee is per kilobyte, we want in bytes
-            res.send({...json, result: {blockcount, fee: toSats(json.result.feerate / 1024)}});
+            res.send({...json, result: {block, fee: toSats(json.result.feerate / 1024)}});
         })
         .catch(err => {
             console.log(err);

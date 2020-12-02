@@ -8,7 +8,7 @@
     - `tx_hash`
     - `height`
     - `value`
-    - `time`
+    - `recvd`: epoch time (in seconds) when tx received
 * `/getblockandfee`: returns blockcount and sats fee for 1 block conf
   - {"blockcount": Number, "fee": Number (in sats)}
 * `/getblockcount`
