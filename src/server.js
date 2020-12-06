@@ -209,7 +209,7 @@ app.get('/gettxvals/:txid', (req, res) => {
                 return {txid: j.result.txid, address: vout.scriptPubKey.addresses[0],
                         pos: vout.n, value: toSats(vout.value)};
             });
-            res.send({txid, confs, recvd, inputs, outputs});
+            res.send({error: null, id, result: {txid, confs, recvd, inputs, outputs}});
         })
         .catch(err => {
             console.log(err);
