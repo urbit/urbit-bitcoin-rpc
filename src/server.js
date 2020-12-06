@@ -14,6 +14,8 @@ console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 const app = express();
 const port = 50002;
 
+const identity = (x) => x;
+
 const addressToScriptHash = (address) => {
     let script = bitcoin.address.toOutputScript(address);
     let hash = bitcoin.crypto.sha256(script);
@@ -161,7 +163,7 @@ app.get('/getblockandfee', (req, res) => {
 app.get('/getblockcount', (req, res) => {
     const id = 'get-block-count';
     const rpcCall = {jsonrpc: '2.0', id, method: 'getblockcount'};
-    jsonRespond(bRpc(rpcCall), (j) => j, res);
+    jsonRespond(bRpc(rpcCall), identity, res);
 });
 
 app.get('/getrawtx/:txid', (req, res) => {
@@ -173,6 +175,46 @@ app.get('/getrawtx/:txid', (req, res) => {
         return {...json, result: {rawtx: json.result, txid}};
     }
     jsonRespond(bRpc(rpcCall), addTxId, res);
+});
+
+app.get('/gettxvals/:txid', (req, res) => {
+    const id = 'get-tx-vals';
+    const txid = req.params.txid;
+    const rpcCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
+                     params: [txid, true]};
+    let vouts;
+    let outputs;
+    let confs;
+    let recvd;
+    bRpc(rpcCall)
+        .then(json => {
+            confs = json.result.confirmations;
+            recvd = json.result.blocktime;
+
+            outputs = json.result.vout.map((vout) => {
+                return {txid, address: vout.scriptPubKey.addresses[0],
+                        pos: vout.n, value: vout.value};
+            });
+            vouts = json.result.vin.map((vin) => vin.vout);
+            const tmpInputs = json.result.vin.map((vin) => {
+                const call = {jsonrpc: '2.0', id: 'tmp', method: 'getrawtransaction',
+                              params: [vin.txid, true]};
+                return bRpc(call);
+            });
+            return Promise.all(tmpInputs);
+        })
+        .then(jsons => {
+            const inputs = jsons.map((j, idx) => {
+                const vout = j.result.vout[vouts[idx]];
+                return {txid: j.result.txid, address: vout.scriptPubKey.addresses[0],
+                        pos: vout.n, value: vout.value};
+            });
+            res.send({txid, confs, recvd, inputs, outputs});
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
