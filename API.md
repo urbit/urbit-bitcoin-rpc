@@ -15,3 +15,17 @@
   - `Number`
 * `/getrawtx/:txid`
   - `RawTxHex`
+* `/gettxvals`
+  - `txid`
+  - `recvd`: epoch time (in seconds) when tx received
+  - `confs`
+  - inputs: array
+    - `pos`
+    - `txid`
+    - `value`
+    - `address`
+  - outputs: array
+    - `pos`
+    - `txid`
+    - `value`
+    - `address`
