@@ -193,7 +193,7 @@ app.get('/gettxvals/:txid', (req, res) => {
 
             outputs = json.result.vout.map((vout) => {
                 return {txid, address: vout.scriptPubKey.addresses[0],
-                        pos: vout.n, value: vout.value};
+                        pos: vout.n, value: toSats(vout.value)};
             });
             vouts = json.result.vin.map((vin) => vin.vout);
             const tmpInputs = json.result.vin.map((vin) => {
@@ -207,9 +207,9 @@ app.get('/gettxvals/:txid', (req, res) => {
             const inputs = jsons.map((j, idx) => {
                 const vout = j.result.vout[vouts[idx]];
                 return {txid: j.result.txid, address: vout.scriptPubKey.addresses[0],
-                        pos: vout.n, value: vout.value};
+                        pos: vout.n, value: toSats(vout.value)};
             });
-            res.send({txid, confs, recvd, inputs, outputs});
+            res.send({error: null, id, result: {txid, confs, recvd, inputs, outputs}});
         })
         .catch(err => {
             console.log(err);
