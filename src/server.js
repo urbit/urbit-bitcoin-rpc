@@ -221,7 +221,6 @@ app.get('/gettxvals/:txid', (req, res) => {
 });
 
 app.post("/createrawtx", (req, res) => {
-    console.log(req.body);
     const id = 'create-raw-tx';
     const inputs = req.body.inputs;
     const outputs = req.body.outputs;
