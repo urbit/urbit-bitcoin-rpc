@@ -13,6 +13,8 @@ curl http://localhost:50002/getfee/1000
 curl http://localhost:50002/getrawtx/f107fd63c7b78df447dd4355d39e474786998d78ff1c152602fafe7e96c10e4d
 curl http://localhost:50002/getblockcount
 
+curl -XPOST -d '{"inputs": [{"txid": "0e868771b3bff789525e21bac735e28070d1eff0fb4df59adc98e9148e2f85d4", "vout": 0}], "outputs": [{"bc1q0ydcskwye4rqky4qankhl4kegajl8nh50plmx0": 0.125}]}' -H 'content-type: application/json' http://localhost:50002/createrawtx
+
 Runs `bitcoind` and `electrs`. Also runs a NodeJS proxy server to `electrs` RPC, so that it can accept HTTP calls.
 
 ## Auth Notes

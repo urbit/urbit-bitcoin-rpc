@@ -29,3 +29,14 @@
     - `txid`
     - `value`
     - `address`
+* POST `/createrawtx`
+POST args:
+  - inputs
+    - txid: hex string
+    - vout: number
+  - outputs
+    - {address: amount}
+Result:
+  hex string of tx
+
+

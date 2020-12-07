@@ -13,6 +13,7 @@ console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 
 const app = express();
 const port = 50002;
+app.use(express.json());
 
 const identity = (x) => x;
 
@@ -217,6 +218,16 @@ app.get('/gettxvals/:txid', (req, res) => {
             console.log(err);
             res.status(err.code).end();
         });
+});
+
+app.post("/createrawtx", (req, res) => {
+    console.log(req.body);
+    const id = 'create-raw-tx';
+    const inputs = req.body.inputs;
+    const outputs = req.body.outputs;
+    const rpcCall = {jsonrpc: '2.0', id, method: 'createrawtransaction',
+                     params: [inputs, outputs]};
+    jsonRespond(bRpc(rpcCall), identity, res);
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
