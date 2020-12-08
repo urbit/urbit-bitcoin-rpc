@@ -27,6 +27,8 @@ const addressToScriptHash = (address) => {
 /* takes BTC amount, returns Satoshis */
 const toSats = (btc) => Math.ceil(btc * 100000000);
 
+const fromSats = (sats) => sats / 100000000;
+
 // electrs rpc
 const eRpc = (addr, rpcCall) => {
     return new Promise((resolve, reject) => {
@@ -223,11 +225,16 @@ app.get('/gettxvals/:txid', (req, res) => {
 app.post("/createrawtx", (req, res) => {
     const id = 'create-raw-tx';
     const inputs = req.body.inputs;
-    const outputs = req.body.outputs;
+    const outputs = req.body.outputs.map((o) => {
+        const addr = Object.keys(o)[0];
+        const value = fromSats(Object.values(o)[0]);
+        let output = {};
+        output[addr] = value;
+        return output;
+    });
     const rpcCall = {jsonrpc: '2.0', id, method: 'createrawtransaction',
                      params: [inputs, outputs]};
     const toRawTx = (json) => {
-        console.log(json);
         const rawtx = json.result;
         const txid = bitcoin.Transaction.fromHex(rawtx).getId();
         return {...json, result: {rawtx, txid}};

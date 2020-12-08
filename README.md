@@ -13,7 +13,11 @@ curl http://localhost:50002/getfee/1000
 curl http://localhost:50002/getrawtx/f107fd63c7b78df447dd4355d39e474786998d78ff1c152602fafe7e96c10e4d
 curl http://localhost:50002/getblockcount
 
-curl -XPOST -d '{"inputs": [{"txid": "0e868771b3bff789525e21bac735e28070d1eff0fb4df59adc98e9148e2f85d4", "vout": 0}], "outputs": [{"bc1q0ydcskwye4rqky4qankhl4kegajl8nh50plmx0": 0.125}]}' -H 'content-type: application/json' http://localhost:50002/createrawtx
+curl -XPOST -d '{"inputs": [{"txid": "0e868771b3bff789525e21bac735e28070d1eff0fb4df59adc98e9148e2f85d4", "vout": 0}], "outputs": [{"bc1q0ydcskwye4rqky4qankhl4kegajl8nh50plmx0": 12500000}]}' -H 'content-type: application/json' http://localhost:50002/createrawtx
+
+gives: 
+`{"result":{"rawtx":"0200000001d4852f8e14e998dc9af54dfbf0efd17080e235c7ba215e5289f7bfb37187860e0000000000ffffffff0120bcbe0000000000160014791b8859c4cd460b12a0eced7fd6d94765f3cef400000000","txid":"a2961f5bafe863f59b03d38c632380e1252caceb9a590f31d51e97859c3830c1"},"error":null,"id":"create-raw-tx"}`
+
 
 Runs `bitcoind` and `electrs`. Also runs a NodeJS proxy server to `electrs` RPC, so that it can accept HTTP calls.
 

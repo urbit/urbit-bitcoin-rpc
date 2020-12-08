@@ -36,7 +36,7 @@ POST args:
     - txid: hex string
     - vout: number
   - outputs
-    - {address: amount}
+    - {address: amount (in sats)}
 Result:
   `rawtx`: hex string
   `txid`:  hex string
