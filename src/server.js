@@ -226,7 +226,13 @@ app.post("/createrawtx", (req, res) => {
     const outputs = req.body.outputs;
     const rpcCall = {jsonrpc: '2.0', id, method: 'createrawtransaction',
                      params: [inputs, outputs]};
-    jsonRespond(bRpc(rpcCall), identity, res);
+    const toRawTx = (json) => {
+        console.log(json);
+        const rawtx = json.result;
+        const txid = bitcoin.Transaction.fromHex(rawtx).getId();
+        return {...json, result: {rawtx, txid}};
+    };
+    jsonRespond(bRpc(rpcCall), toRawTx, res);
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
