@@ -14,7 +14,8 @@
 * `/getblockcount`
   - `Number`
 * `/getrawtx/:txid`
-  - `RawTxHex`
+  - `rawtx`: hex string
+  - `txid`
 * `/gettxvals`
   - `txid`
   - `recvd`: epoch time (in seconds) when tx received
@@ -29,3 +30,15 @@
     - `txid`
     - `value`
     - `address`
+* POST `/createrawtx`
+POST args:
+  - inputs
+    - txid: hex string
+    - vout: number
+  - outputs
+    - {address: amount (in sats)}
+Result:
+  `rawtx`: hex string
+  `txid`:  hex string
+
+
