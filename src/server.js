@@ -229,9 +229,37 @@ app.get('/gettxvals/:txid', (req, res) => {
 
 app.get('/broadcasttx/:rawtx', (req, res) => {
     const id = 'broadcast-tx';
-    const rpcCall = {jsonrpc: '2.0', id, method: 'sendrawtransaction',
-                     params: [req.params.rawtx]};
-    jsonRespond(bRpc(rpcCall), identity, res);
+    const txid = bitcoin.Transaction.fromHex(req.params.rawtx).getId();
+    const sendTxCall = {jsonrpc: '2.0', id, method: 'sendrawtransaction',
+                        params: [req.params.rawtx]};
+    const txInfoCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
+                        params: [txid]};
+
+    bRpc(sendTxCall)
+        .then(json => {
+            if(json.result != null) {
+                // got txid, done
+                res.send({...json, result: {txid, broadcast: true, included: false}});
+            }
+            else {
+                return bRpc(txInfoCall);
+            }
+        })
+    // we only get here if sendrawtransaction failed
+        .then(json => {
+            // -5 : getrawtransaction failed with unseen
+            if (json.error != null && json.error.code === -5) {
+                res.send({...json, error: null, result: {txid, broadcast: false, included: false}});
+            }
+            // otherwise, we saw the transaction, but it failed to add, means it already succeeded
+            else {
+                res.send({...json, result: {txid, broadcast: false, included: true}});
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
 });
 
 app.post("/createrawtx", (req, res) => {

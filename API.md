@@ -32,6 +32,8 @@
     - `address`
 * `/broadcasttx`
   - `txid`
+  - `broadcast`: whether this particular call broadcast the transaction
+  - `included`: whether the TX is in the mempool/conf'd
   - inputs
     - `signed-rawtx`
 * POST `/createrawtx`
