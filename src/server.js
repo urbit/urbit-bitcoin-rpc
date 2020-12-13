@@ -64,11 +64,16 @@ const bRpc = (rpcCall) => {
         };
         const callback = (error, response, body) => {
             if (!error && response.statusCode == 200) {
-                resolve(JSON.parse(body));
+                return resolve(JSON.parse(body));
             }
             else {
-                console.log(error);
-                return reject({code: 400, msg: 'bad btc-rpc call'});
+                const err = JSON.parse(body).error;
+                if (err != undefined) {
+                    return resolve(JSON.parse(body));
+                }
+                else {
+                    return reject({code: 400, msg: 'bad btc-rpc call'});
+                }
             }
         };
         try { request(options, callback); }
@@ -220,6 +225,13 @@ app.get('/gettxvals/:txid', (req, res) => {
             console.log(err);
             res.status(err.code).end();
         });
+});
+
+app.get('/broadcasttx/:rawtx', (req, res) => {
+    const id = 'broadcast-tx';
+    const rpcCall = {jsonrpc: '2.0', id, method: 'sendrawtransaction',
+                     params: [req.params.rawtx]};
+    jsonRespond(bRpc(rpcCall), identity, res);
 });
 
 app.post("/createrawtx", (req, res) => {

@@ -30,6 +30,10 @@
     - `txid`
     - `value`
     - `address`
+* `/broadcasttx`
+  - `txid`
+  - inputs
+    - `signed-rawtx`
 * POST `/createrawtx`
 POST args:
   - inputs
