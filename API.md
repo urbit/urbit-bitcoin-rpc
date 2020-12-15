@@ -36,15 +36,5 @@
   - `included`: whether the TX is in the mempool/conf'd
   - inputs
     - `signed-rawtx`
-* POST `/createrawtx`
-POST args:
-  - inputs
-    - txid: hex string
-    - vout: number
-  - outputs
-    - {address: amount (in sats)}
-Result:
-  `rawtx`: hex string
-  `txid`:  hex string
 
 

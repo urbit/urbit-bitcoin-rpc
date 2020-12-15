@@ -8,7 +8,7 @@ const btcCookiePass = process.env.BTC_RPC_COOKIE_PASS;
 const btcRpcUrl = '127.0.0.1:8332/';
 const electrsHost = process.env.ELECTRS_HOST;
 const electrsPort = process.env.ELECTRS_PORT;
-console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
+// console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
 console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 
 const app = express();
@@ -260,26 +260,6 @@ app.get('/broadcasttx/:rawtx', (req, res) => {
             console.log(err);
             res.status(err.code).end();
         });
-});
-
-app.post("/createrawtx", (req, res) => {
-    const id = 'create-raw-tx';
-    const inputs = req.body.inputs;
-    const outputs = req.body.outputs.map((o) => {
-        const addr = Object.keys(o)[0];
-        const value = fromSats(Object.values(o)[0]);
-        let output = {};
-        output[addr] = value;
-        return output;
-    });
-    const rpcCall = {jsonrpc: '2.0', id, method: 'createrawtransaction',
-                     params: [inputs, outputs]};
-    const toRawTx = (json) => {
-        const rawtx = json.result;
-        const txid = bitcoin.Transaction.fromHex(rawtx).getId();
-        return {...json, result: {rawtx, txid}};
-    };
-    jsonRespond(bRpc(rpcCall), toRawTx, res);
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
