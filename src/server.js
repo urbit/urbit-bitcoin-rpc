@@ -8,7 +8,7 @@ const btcCookiePass = process.env.BTC_RPC_COOKIE_PASS;
 const btcRpcUrl = '127.0.0.1:8332/';
 const electrsHost = process.env.ELECTRS_HOST;
 const electrsPort = process.env.ELECTRS_PORT;
-console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
+// console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
 console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 
 const app = express();
@@ -64,11 +64,16 @@ const bRpc = (rpcCall) => {
         };
         const callback = (error, response, body) => {
             if (!error && response.statusCode == 200) {
-                resolve(JSON.parse(body));
+                return resolve(JSON.parse(body));
             }
             else {
-                console.log(error);
-                return reject({code: 400, msg: 'bad btc-rpc call'});
+                const err = JSON.parse(body).error;
+                if (err != undefined) {
+                    return resolve(JSON.parse(body));
+                }
+                else {
+                    return reject({code: 400, msg: 'bad btc-rpc call'});
+                }
             }
         };
         try { request(options, callback); }
@@ -222,24 +227,39 @@ app.get('/gettxvals/:txid', (req, res) => {
         });
 });
 
-app.post("/createrawtx", (req, res) => {
-    const id = 'create-raw-tx';
-    const inputs = req.body.inputs;
-    const outputs = req.body.outputs.map((o) => {
-        const addr = Object.keys(o)[0];
-        const value = fromSats(Object.values(o)[0]);
-        let output = {};
-        output[addr] = value;
-        return output;
-    });
-    const rpcCall = {jsonrpc: '2.0', id, method: 'createrawtransaction',
-                     params: [inputs, outputs]};
-    const toRawTx = (json) => {
-        const rawtx = json.result;
-        const txid = bitcoin.Transaction.fromHex(rawtx).getId();
-        return {...json, result: {rawtx, txid}};
-    };
-    jsonRespond(bRpc(rpcCall), toRawTx, res);
+app.get('/broadcasttx/:rawtx', (req, res) => {
+    const id = 'broadcast-tx';
+    const txid = bitcoin.Transaction.fromHex(req.params.rawtx).getId();
+    const sendTxCall = {jsonrpc: '2.0', id, method: 'sendrawtransaction',
+                        params: [req.params.rawtx]};
+    const txInfoCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
+                        params: [txid]};
+
+    bRpc(sendTxCall)
+        .then(json => {
+            if(json.result != null) {
+                // got txid, done
+                res.send({...json, result: {txid, broadcast: true, included: false}});
+            }
+            else {
+                return bRpc(txInfoCall);
+            }
+        })
+    // we only get here if sendrawtransaction failed
+        .then(json => {
+            // -5 : getrawtransaction failed with unseen
+            if (json.error != null && json.error.code === -5) {
+                res.send({...json, error: null, result: {txid, broadcast: false, included: false}});
+            }
+            // otherwise, we saw the transaction, but it failed to add, means it already succeeded
+            else {
+                res.send({...json, result: {txid, broadcast: false, included: true}});
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(err.code).end();
+        });
 });
 
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));

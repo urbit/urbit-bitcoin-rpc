@@ -30,15 +30,11 @@
     - `txid`
     - `value`
     - `address`
-* POST `/createrawtx`
-POST args:
+* `/broadcasttx`
+  - `txid`
+  - `broadcast`: whether this particular call broadcast the transaction
+  - `included`: whether the TX is in the mempool/conf'd
   - inputs
-    - txid: hex string
-    - vout: number
-  - outputs
-    - {address: amount (in sats)}
-Result:
-  `rawtx`: hex string
-  `txid`:  hex string
+    - `signed-rawtx`
 
 
