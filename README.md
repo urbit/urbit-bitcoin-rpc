@@ -39,3 +39,14 @@ git submodule update
 ```
 rpcallowip=127.0.0.1
 ```
+
+## Raspberry Pi Setup
+Rust install weirdness:
+https://www.raspberrypi.org/forums/viewtopic.php?t=289963
+```
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+Do a Custom Install, and set the triple to:
+```
+armv7-unknown-linux-gnueabihf
+```
