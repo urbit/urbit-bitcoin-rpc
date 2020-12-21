@@ -17,6 +17,8 @@
   - `rawtx`: hex string
   - `txid`
 * `/gettxvals`
+  arg: txid
+  - `included`: false if TX is not in mempool or blockchain
   - `txid`
   - `recvd`: epoch time (in seconds) when tx received
   - `confs`
@@ -36,5 +38,3 @@
   - `included`: whether the TX is in the mempool/conf'd
   - inputs
     - `signed-rawtx`
-
-

@@ -187,15 +187,26 @@ app.get('/getrawtx/:txid', (req, res) => {
 
 app.get('/gettxvals/:txid', (req, res) => {
     const id = 'get-tx-vals';
-    const txid = req.params.txid;
+    const txid = req.params.txid.toLowerCase();
     const rpcCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
                      params: [txid, true]};
     let vouts;
+    let included;
     let outputs;
     let confs;
     let recvd;
     bRpc(rpcCall)
         .then(json => {
+            //  If error is -5, TX not in blockchain
+            if (json.error != null && json.error.code === -5) {
+                included = false;
+                confs = 0;
+                recvd = 0;
+                outputs = [];
+                return Promise.all([]);
+            }
+
+            included = true;
             confs = json.result.confirmations;
             recvd = json.result.blocktime;
 
@@ -219,7 +230,7 @@ app.get('/gettxvals/:txid', (req, res) => {
             });
             if (confs === undefined) confs = 0;
             if (recvd === undefined) recvd = 0;
-            res.send({error: null, id, result: {txid, confs, recvd, inputs, outputs}});
+            res.send({error: null, id, result: {included, txid, confs, recvd, inputs, outputs}});
         })
         .catch(err => {
             console.log(err);
