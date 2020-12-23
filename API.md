@@ -1,6 +1,7 @@
 # RPC API
 
 * `/addresses/info/:address`
+  - `address`
   - `used`: boolean, whether address has been used
   - `block`: number
   - `utxos`: array of
