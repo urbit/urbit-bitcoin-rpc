@@ -102,7 +102,6 @@ const jsonRespond = (rpcPromise, transformer, res) => {
 */
 app.get('/addresses/info/:address', (req, res) => {
     const address = req.params.address;
-    console.log(address);
     const id = 'get-address-info';
     const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
     const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
