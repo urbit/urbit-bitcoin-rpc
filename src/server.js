@@ -101,7 +101,8 @@ const jsonRespond = (rpcPromise, transformer, res) => {
   and packages the results into one RPC return
 */
 app.get('/addresses/info/:address', (req, res) => {
-    const addr = req.params.address;
+    const address = req.params.address;
+    console.log(address);
     const id = 'get-address-info';
     const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
     const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
@@ -111,10 +112,10 @@ app.get('/addresses/info/:address', (req, res) => {
     let utxos;
     let used;
     let block;
-    eRpc(addr, rpcCall1)
+    eRpc(address, rpcCall1)
         .then(json => {
             utxos = json.result;
-            return eRpc(addr, rpcCall2);
+            return eRpc(address, rpcCall2);
         })
         .then(json => {
             used = utxos.length > 0 || json.result.length > 0;
@@ -139,7 +140,7 @@ app.get('/addresses/info/:address', (req, res) => {
             for(let i=0; i<jsons.length; i++) {
                 utxos[i] = {...utxos[i], recvd: jsons[i].result.time};
             }
-            res.send({error: null, id, result: {utxos, block, used}});
+            res.send({error: null, id, result: {address, utxos, block, used}});
         })
         .catch(err => {
             console.log(err);
