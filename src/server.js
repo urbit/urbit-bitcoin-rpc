@@ -1,6 +1,7 @@
 const express = require('express');
 const net = require('net');
 const bitcoin = require('bitcoinjs-lib');
+const BigNumber = require('bignumber.js');
 const request = require("request");
 
 //var electrsHost = 'electrs';
@@ -25,9 +26,10 @@ const addressToScriptHash = (address) => {
 };
 
 /* takes BTC amount, returns Satoshis */
-const toSats = (btc) => Math.ceil(btc * 100000000);
-
-const fromSats = (sats) => sats / 100000000;
+const toSats = (btc) => {
+    const sats = new BigNumber(btc).times(100000000).toNumber();
+    return Math.ceil(sats);
+};
 
 // electrs rpc
 const eRpc = (addr, rpcCall) => {
