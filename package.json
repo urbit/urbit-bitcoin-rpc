@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "description": "*TODO* Make test vectors for these addresses: curl http://localhost:50002/addresses/info/bc1qm7cegwfd0pvv9ypvz5nhstage00xkxevtrpshc curl http://localhost:50002/addresses/info/bc1qlwd7mw33uea5m8r2lsnsrkc7gp2qynrxsfxpfm curl http://localhost:50002/addresses/info/bc1qglkc9zfcn04vcc88nn0ljtxcpu5uxfznc3829k ::  first is an address w balance ::  second has no balance but is used ::  third is unused",
   "main": "index.js",
-  "dependencies": {},
+  "dependencies": {
+    "bignumber.js": "^9.0.1"
+  },
   "devDependencies": {
     "bitcoinjs-lib": "^5.2.0",
     "express": "^4.17.1",
