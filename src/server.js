@@ -69,7 +69,13 @@ const bRpc = (rpcCall) => {
                 return resolve(JSON.parse(body));
             }
             else {
-                const err = JSON.parse(body).error;
+                let err;
+                try {
+                    err = JSON.parse(body).error;
+                }
+                catch (e) {
+                    return reject({code: 400, msg: 'bad btc-rpc call'});
+                }
                 if (err != undefined) {
                     return resolve(JSON.parse(body));
                 }
