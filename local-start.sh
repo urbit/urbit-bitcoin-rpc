@@ -19,5 +19,5 @@ node src/server.js &
     --cookie-file $BTC_DATADIR/.cookie \
     --daemon-dir $BTC_DATADIR \
     --db-dir $ELECTRS_DATADIR \
-    --daemon-rpc-addr "localhost:8332" \
+    --daemon-rpc-addr "127.0.0.1:8332" \
     --electrum-rpc-addr $ELECTRS_HOST:$ELECTRS_PORT
