@@ -10,8 +10,11 @@
     - `height`
     - `value`
     - `recvd`: epoch time (in seconds) when tx received
-* `/getblockandfee`: returns blockcount and sats fee for 1 block conf
-  - {"blockcount": Number, "fee": Number (in sats)}
+* `/getblockinfo`: returns meta about a block number
+  - `block`: Number
+  - `fee`: Number (in sat)
+  - `blockhash`: hex string
+  - `blockfilter`: hext string
 * `/getrawtx/:txid`
   - `rawtx`: hex string
   - `txid`

@@ -155,12 +155,15 @@ app.get('/addresses/info/:address', (req, res) => {
         });
 });
 
-app.get('/getblockandfee', (req, res) => {
-    const id = 'get-block-and-fee';
+app.get('/getblockinfo', (req, res) => {
+    const id = 'get-block-info';
     const blockCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
     const feeCall = {jsonrpc: '2.0', id, method: 'estimatesmartfee',
                      params: [1]};
+
     let block;
+    let fee;
+    let blockhash;
     bRpc(blockCall)
         .then(json => {
             block = json.result;
@@ -168,7 +171,20 @@ app.get('/getblockandfee', (req, res) => {
         })
         .then(json => {
             // fee is per kilobyte, we want in bytes
-            res.send({...json, result: {block, fee: toSats(json.result.feerate / 1024)}});
+            fee = Math.ceil(toSats(json.result.feerate) / 1024);
+            const blockhashCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockhash',
+                                   params: [block]};
+            return bRpc(blockhashCall);
+        })
+        .then(json => {
+            console.log(json.result);
+            blockhash = json.result;
+            const blockfilterCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockfilter',
+                                   params: [blockhash]};
+            return bRpc(blockfilterCall);
+        })
+        .then(json => {
+            res.send({...json, result: {block, fee, blockhash, blockfilter: json.result.filter}});
         })
         .catch(err => {
             console.log(err);
