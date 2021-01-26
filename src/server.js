@@ -158,7 +158,7 @@ app.get('/addresses/info/:address', (req, res) => {
 app.get('/getblockinfo', (req, res) => {
     const id = 'get-block-info';
     const blockCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
-    const feeCall = {jsonrpc: '2.0', id, method: 'estimatesmartfee',
+    const feeCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'estimatesmartfee',
                      params: [1]};
 
     let block;
@@ -177,9 +177,8 @@ app.get('/getblockinfo', (req, res) => {
             return bRpc(blockhashCall);
         })
         .then(json => {
-            console.log(json.result);
             blockhash = json.result;
-            const blockfilterCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockfilter',
+            const blockfilterCall = {jsonrpc: '2.0', id, method: 'getblockfilter',
                                    params: [blockhash]};
             return bRpc(blockfilterCall);
         })
