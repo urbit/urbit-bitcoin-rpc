@@ -1,6 +1,6 @@
 #!/bin/bash
 # Start BTC first so that proxy can access BTC's .cookie file
-# Sleep so that the .cookie file is generated
+# Sleep so that the .cookie file is generated 
 BTC_DATADIR=/Volumes/sandisk/BTC
 bitcoind -datadir=$BTC_DATADIR -testnet &
 sleep 2
