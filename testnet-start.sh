@@ -8,6 +8,8 @@ sleep 2
 ELECTRS_DATADIR=/Volumes/sandisk/electrs
 COOKIE=$(cat ${BTC_DATADIR}/testnet3/.cookie)
 export BTC_RPC_COOKIE_PASS=${COOKIE:11}
+export BTC_RPC_PORT=18332
+export BTC_NETWORK=TESTNET
 export ELECTRS_HOST=127.0.0.1
 export ELECTRS_PORT=50001
 export PROXY_PORT=50002
@@ -20,5 +22,5 @@ node src/server.js &
     --cookie-file $BTC_DATADIR/testnet3/.cookie \
     --daemon-dir $BTC_DATADIR \
     --db-dir $ELECTRS_DATADIR \
-    --daemon-rpc-addr "127.0.0.1:18332" \
+    --daemon-rpc-addr "127.0.0.1:${BTC_RPC_PORT}" \
     --electrum-rpc-addr $ELECTRS_HOST:$ELECTRS_PORT
