@@ -8,7 +8,7 @@ curl http://localhost:50002/addresses/info/bc1qglkc9zfcn04vcc88nn0ljtxcpu5uxfznc
 ::  second has no balance but is used
 ::  third is unused
 
-curl http://localhost:50002/getblockandfee
+curl http://localhost:50002/getblockinfo
 curl http://localhost:50002/getrawtx/f107fd63c7b78df447dd4355d39e474786998d78ff1c152602fafe7e96c10e4d
 curl http://localhost:50002/getblockcount
 

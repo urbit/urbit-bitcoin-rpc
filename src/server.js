@@ -6,11 +6,15 @@ const request = require("request");
 
 //var electrsHost = 'electrs';
 const btcCookiePass = process.env.BTC_RPC_COOKIE_PASS;
-const btcRpcUrl = '127.0.0.1:8332/';
+const btcRpcPort = process.env.BTC_RPC_PORT;
+const btcRpcUrl = `127.0.0.1:${btcRpcPort}/`;
 const electrsHost = process.env.ELECTRS_HOST;
 const electrsPort = process.env.ELECTRS_PORT;
 // console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
 console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
+
+const network =
+   (process.env.BTC_NETWORK == 'TESTNET') ? bitcoin.networks.testnet : bitcoin.networks.bitcoin;
 
 const app = express();
 const port = 50002;
@@ -19,7 +23,7 @@ app.use(express.json());
 const identity = (x) => x;
 
 const addressToScriptHash = (address) => {
-    let script = bitcoin.address.toOutputScript(address);
+    let script = bitcoin.address.toOutputScript(address, network);
     let hash = bitcoin.crypto.sha256(script);
     let reversedHash = Buffer.from(hash.reverse());
     return reversedHash.toString('hex');
@@ -36,7 +40,7 @@ const eRpc = (addr, rpcCall) => {
     return new Promise((resolve, reject) => {
         let scriptHash;
         try { scriptHash = addressToScriptHash(addr); }
-        catch (e) { return reject({code: 400, msg: 'bad address to e-rpc'}); }
+        catch (e) { return reject({code: 400, msg: 'bad address to electrs-rpc'}); }
 
         const client = new net.Socket();
         client.connect(electrsPort, electrsHost, () => {
