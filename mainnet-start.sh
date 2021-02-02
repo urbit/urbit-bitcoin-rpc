@@ -1,11 +1,12 @@
 #!/bin/bash
 # Start BTC first so that proxy can access BTC's .cookie file
 # Sleep so that the .cookie file is generated
-BTC_DATADIR=/Volumes/sandisk/BTC
+DRIVE=/Volumes/sandisk
+BTC_DATADIR=$DRIVE/BTC
 bitcoind -datadir=$BTC_DATADIR &
 sleep 2
 
-ELECTRS_DATADIR=/Volumes/sandisk/electrs
+ELECTRS_DATADIR=$DRIVE/electrs
 COOKIE=$(cat ${BTC_DATADIR}/.cookie)
 export BTC_RPC_COOKIE_PASS=${COOKIE:11}
 export BTC_RPC_PORT=8332
