@@ -174,14 +174,12 @@ app.get('/getblockinfo', (req, res) => {
             return bRpc(feeCall);
         })
         .then(json => {
-            console.log(json);
             if (!json.result.errors) {
                 // fee is per kilobyte, we want in bytes
                 fee = Math.ceil(toSats(json.result.feerate) / 1024);
             }
             else {
-                console.log("NULL FEE")
-                fee = 100;
+                fee = null;
             }
             const blockhashCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockhash',
                                    params: [block]};
