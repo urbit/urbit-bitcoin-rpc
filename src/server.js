@@ -118,7 +118,7 @@ app.get('/addresses/info/:address', (req, res) => {
     const rpcCall1 = {jsonrpc: '2.0', id, method: 'blockchain.scripthash.listunspent'};
     const rpcCall2 = {jsonrpc: '2.0', id: 'e-rpc', method: 'blockchain.scripthash.get_history'};
     const blockRpc = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
-    const timeRpc = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockstats', params: [["time"]]};
+    const timeRpc = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockstats'};
 
     let utxos;
     let used;
@@ -139,8 +139,7 @@ app.get('/addresses/info/:address', (req, res) => {
                     return {result: {time: 0}};
                 }
                 else {
-                    let params = timeRpc.params;
-                    params.unshift(u.height);
+                    const params = [u.height, ["time"]];
                     const call = {...timeRpc, params};
                     return bRpc(call);
                 }
@@ -155,7 +154,7 @@ app.get('/addresses/info/:address', (req, res) => {
         })
         .catch(err => {
             console.log(err);
-            res.status(err.code).end();
+            res.status(500).end();
         });
 });
 
@@ -174,7 +173,7 @@ app.get('/getblockinfo', (req, res) => {
             return bRpc(feeCall);
         })
         .then(json => {
-            if (!json.result.errors) {
+            if (json.result && !json.result.errors) {
                 // fee is per kilobyte, we want in bytes
                 fee = Math.ceil(toSats(json.result.feerate) / 1024);
             }
