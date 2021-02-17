@@ -3,14 +3,14 @@
 # Sleep so that the .cookie file is generated
 DRIVE=/Volumes/sandisk
 BTC_DATADIR=$DRIVE/BTC
-bitcoind -datadir=$BTC_DATADIR -testnet &
+bitcoind -datadir=$BTC_DATADIR &
 sleep 2
 
 ELECTRS_DATADIR=$DRIVE/electrs
-COOKIE=$(cat ${BTC_DATADIR}/testnet3/.cookie)
+COOKIE=$(cat ${BTC_DATADIR}/.cookie)
 export BTC_RPC_COOKIE_PASS=${COOKIE:11}
-export BTC_RPC_PORT=18332
-export BTC_NETWORK=TESTNET
+export BTC_RPC_PORT=8332
+export BTC_NETWORK=MAIN
 export ELECTRS_HOST=127.0.0.1
 export ELECTRS_PORT=50001
 export PROXY_PORT=50002
@@ -19,8 +19,7 @@ node src/dumb.js &
 
 ./electrs/target/release/electrs \
     -vvvv  --timestamp \
-    --network testnet \
-    --cookie-file $BTC_DATADIR/testnet3/.cookie \
+    --cookie-file $BTC_DATADIR/.cookie \
     --daemon-dir $BTC_DATADIR \
     --db-dir $ELECTRS_DATADIR \
     --daemon-rpc-addr "127.0.0.1:${BTC_RPC_PORT}" \
