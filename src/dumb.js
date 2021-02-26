@@ -76,17 +76,18 @@ app.post('/btc-rpc', (req, res) => {
             res.send(json);
         })
         .catch(err => {
-            console.log(err);
             res.status(502).end();
         });
 });
 
 app.post('/electrs-rpc', (req, res) => {
+    console.log(req.body);
     eRpc(req.body)
         .then(json => {
             res.send(json);
         })
         .catch(err => {
+            console.log("ERROR");
             console.log(err);
             res.status(502).end();
         });
