@@ -1,5 +1,11 @@
 # Utilities for Running an Urbit Bitcoin Full Node
 
+**NOTE 1**
+Make sure that your `bitcoin.conf` settings match those of the included `bitcoin.conf`. In particular, if you don't have `blockfilterindex=1` set, the server won't work.
+
+**NOTE 2**
+`src/dumb.js` works, but is not currently implemented on the Hoon side. Use the scripts in the manner done in `mainnet-start.sh` and `testnet-start.sh` for now.
+
 ## Simple Usage
 1. Initialize and build electrs
 ```
