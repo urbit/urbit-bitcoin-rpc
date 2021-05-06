@@ -36,23 +36,28 @@ const toSats = (btc) => {
 };
 
 // electrs rpc
-const eRpc = (addr, rpcCall) => {
+const eRpc = (rpcCall, addr) => {
     return new Promise((resolve, reject) => {
         let scriptHash;
-        try { scriptHash = addressToScriptHash(addr); }
-        catch (e) { return reject({code: 400, msg: 'bad address to electrs-rpc'}); }
+        let params = {};
+
+        if (addr !== undefined) {
+            try { scriptHash = addressToScriptHash(addr); }
+            catch (e) { return reject({code: 400, msg: 'bad address to electrs-rpc'}); }
+            params = {params: [scriptHash]};
+        }
 
         const client = new net.Socket();
         client.connect(electrsPort, electrsHost, () => {
-            const rc = Object.assign({params: [scriptHash]}, rpcCall);
+            const rc = Object.assign(params, rpcCall);
             client.write(JSON.stringify(rc));
             client.write('\r\n');
         });
         client.on('error', err => { return reject({code: 502, msg: "e-rpc error"}); });
-        client.on('data', data => {
-            client.destroy();
-            resolve(JSON.parse(data.toString()));
-        });
+            client.on('data', data => {
+                client.destroy();
+                resolve(JSON.parse(data.toString()));
+            });
     });
 };
 
@@ -123,10 +128,10 @@ app.get('/addresses/info/:address', (req, res) => {
     let utxos;
     let used;
     let block;
-    eRpc(address, rpcCall1)
+    eRpc(rpcCall1, address)
         .then(json => {
             utxos = json.result;
-            return eRpc(address, rpcCall2);
+            return eRpc(rpcCall2, address);
         })
         .then(json => {
             used = utxos.length > 0 || json.result.length > 0;
@@ -272,19 +277,19 @@ app.get('/gettxvals/:txid', (req, res) => {
 app.get('/broadcasttx/:rawtx', (req, res) => {
     const id = 'broadcast-tx';
     const txid = bitcoin.Transaction.fromHex(req.params.rawtx).getId();
-    const sendTxCall = {jsonrpc: '2.0', id, method: 'sendrawtransaction',
+    const sendTxCall = {jsonrpc: '2.0', id, method: 'blockchain.transaction.broadcast',
                         params: [req.params.rawtx]};
-    const txInfoCall = {jsonrpc: '2.0', id, method: 'getrawtransaction',
-                        params: [txid]};
+    const txInfoCall = {jsonrpc: '2.0', id, method: 'blockchain.transaction.get',
+                        params: [txid, true]};
 
-    bRpc(sendTxCall)
+    eRpc(sendTxCall)
         .then(json => {
             if(json.result != null) {
                 // got txid, done
                 res.send({...json, result: {txid, broadcast: true, included: false}});
             }
             else {
-                return bRpc(txInfoCall);
+                return eRpc(txInfoCall);
             }
         })
     // we only get here if sendrawtransaction failed
