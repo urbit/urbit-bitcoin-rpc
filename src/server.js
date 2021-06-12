@@ -163,45 +163,55 @@ app.get('/addresses/info/:address', (req, res) => {
         });
 });
 
-app.get('/getblockinfo', (req, res) => {
-    const id = 'get-block-info';
-    const blockCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
-    const feeCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'estimatesmartfee',
-                     params: [1]};
-
-    let block;
+app.get('/getblockinfo/:block?', (req, res) => {
+    let block = Number(req.params.block);
     let fee;
     let blockhash;
-    bRpc(blockCall)
-        .then(json => {
-            block = json.result;
-            return bRpc(feeCall);
-        })
-        .then(json => {
-            if (json.result && !json.result.errors) {
-                // fee is per kilobyte, we want in bytes
-                fee = Math.ceil(toSats(json.result.feerate) / 1024);
-            }
-            else {
-                fee = null;
-            }
-            const blockhashCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockhash',
-                                   params: [block]};
-            return bRpc(blockhashCall);
-        })
-        .then(json => {
-            blockhash = json.result;
-            const blockfilterCall = {jsonrpc: '2.0', id, method: 'getblockfilter',
-                                   params: [blockhash]};
-            return bRpc(blockfilterCall);
-        })
-        .then(json => {
-            res.send({...json, result: {block, fee, blockhash, blockfilter: json.result.filter}});
-        })
-        .catch(err => {
-            console.log(err);
-            res.status(err.code).end();
-        });
+    const id = 'get-block-info';
+
+    new Promise((resolve, reject) => {
+        if (!req.params.block) {
+            const blockCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockcount'};
+            bRpc(blockCall).then(json => {
+                return resolve({block: json.result});
+            });
+        } else if (Number.isInteger(block) && block >= 0) {
+            return resolve({block: block});
+        } else {
+            return reject({code: 400, msg: `invalid block parameter: ${req.params.block}`});
+        }
+    })
+    .then(json => {
+        block = json.block;
+        const feeCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'estimatesmartfee',
+                         params: [1]};
+        return bRpc(feeCall);
+    })
+    .then(json => {
+        if (json.result && !json.result.errors) {
+            // fee is per kilobyte, we want in bytes
+            fee = Math.ceil(toSats(json.result.feerate) / 1024);
+        }
+        else {
+            fee = null;
+        }
+        const blockhashCall = {jsonrpc: '2.0', id: 'btc-rpc', method: 'getblockhash',
+                               params: [block]};
+        return bRpc(blockhashCall);
+    })
+    .then(json => {
+        blockhash = json.result;
+        const blockfilterCall = {jsonrpc: '2.0', id, method: 'getblockfilter',
+                               params: [blockhash]};
+        return bRpc(blockfilterCall);
+    })
+    .then(json => {
+        res.send({...json, result: {block, fee, blockhash, blockfilter: json.result.filter}});
+    })
+    .catch(err => {
+        console.log(err);
+        res.status(err.code).end();
+    });
 });
 
 app.get('/getblockcount', (req, res) => {
