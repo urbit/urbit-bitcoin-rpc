@@ -7,7 +7,6 @@ DRIVE=/Volumes/sandisk
 
 # Start BTC first so that proxy can access BTC's .cookie file
 # Sleep so that the .cookie file is generated
-DRIVE=/Volumes/sandisk
 BTC_DATADIR=$DRIVE/BTC
 bitcoind -datadir=$BTC_DATADIR -testnet &
 sleep 2
@@ -21,7 +20,7 @@ export ELECTRS_HOST=127.0.0.1
 export ELECTRS_PORT=50001
 export PROXY_PORT=50002
 
-node src/dumb.js &
+node src/server.js &
 
 ./electrs/target/release/electrs \
     -vvvv  --timestamp \
