@@ -13,16 +13,26 @@ const electrsPort = process.env.ELECTRS_PORT;
 // console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
 console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 
-const network =
-  process.env.BTC_NETWORK == "TESTNET"
-    ? bitcoin.networks.testnet
-    : bitcoin.networks.bitcoin;
-
 const app = express();
 const port = 50002;
 app.use(express.json());
 
 const identity = (x) => x;
+
+const getNetwork = (network) => {
+  if (network === "MAIN") {
+    bitcoin.networks.bitcoin;
+  }
+
+  if (network === "TESTNET") {
+    return bitcoin.networks.testnet;
+  }
+
+  // regtest
+  return bitcoin.networks.regtest;
+};
+
+const network = getNetwork(process.env.BTC_NETWORK);
 
 const addressToScriptHash = (address) => {
   let script = bitcoin.address.toOutputScript(address, network);
