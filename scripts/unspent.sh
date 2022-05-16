@@ -1,0 +1,1 @@
+bitcoin-cli -regtest -rpcwallet="$1" listunspent | jq ".[] | {txid: .txid, address: .address, amount: .amount}"
