@@ -405,4 +405,129 @@ app.get("/broadcasttx/:rawtx", (req, res) => {
     });
 });
 
+//?start_height=1&count=2&cp_height=3
+app.get("/blockheaders", (req, res) => {
+  const { start_height: start, count, cp_height: height } = req.query;
+
+  if (!start || !count || !height) {
+    throw new Error("Missing parameters");
+  }
+
+  const params = [start, count, height].map((param) => parseInt(param, 10));
+  const requestBlockHeaders = {
+    jsonrpc: "2.0",
+    id: "request-block-headers",
+    method: "blockchain.block.headers",
+    params,
+  };
+
+  eRpc(requestBlockHeaders)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+//?height=1&tx_pos=2&merkle=true
+app.get("/txfrompos", (req, res) => {
+  const { height, tx_position, merkle } = req.query;
+
+  if (!height || !tx_position) {
+    throw new Error("Missing parameters");
+  }
+
+  const params = [height, tx_position].map((param) => parseInt(param, 10));
+
+  const requestTxFromPos = {
+    jsonrpc: "2.0",
+    id: "tx-from-position",
+    method: "blockchain.transaction.id_from_pos",
+    params: [...params, merkle ? true : false],
+  };
+
+  eRpc(requestTxFromPos)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+app.get("/estimatefee/:confirmedBy", (req, res) => {
+  const confirmedBy = parseInt(req.params.confirmedBy, 10);
+
+  if (!confirmedBy) {
+    throw new Error("Missing parameters");
+  }
+
+  const estimateFee = {
+    jsonrpc: "2.0",
+    id: "estimate-fee",
+    method: "blockchain.estimatefee",
+    params: [confirmedBy],
+  };
+
+  eRpc(estimateFee)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+app.get("/feehistogram", (req, res) => {
+  const histogram = {
+    jsonrpc: "2.0",
+    id: "estimate-fee",
+    method: "mempool.get_fee_histogram",
+  };
+
+  eRpc(histogram)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+// psbt must be url encoded
+app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
+  const { psbt, descriptors = [] } = req.params;
+  let params = [psbt];
+
+  if (descriptors.length) {
+    params.push(JSON.parse(descriptors));
+  }
+
+  const updatepsbt = {
+    jsonrpc: "2.0",
+    id: "update-psbt",
+    method: "utxoupdatepsbt",
+    params,
+  };
+
+  bRpc(updatepsbt)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
