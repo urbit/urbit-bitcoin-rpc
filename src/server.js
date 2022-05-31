@@ -405,56 +405,79 @@ app.get("/broadcasttx/:rawtx", (req, res) => {
     });
 });
 
-//?start_height=1&count=2&cp_height=3
-app.get("/blockheaders", (req, res) => {
-  const { start_height: start, count, cp_height: height } = req.query;
+app.post("/blockheaders", (req, res) => {
+  const { start, count, cp = 0 } = req.body;
 
-  if (!start || !count || !height) {
+  if (!start || !count) {
     throw new Error("Missing parameters");
   }
 
-  const params = [start, count, height].map((param) => parseInt(param, 10));
+  const params = [start, count, cp].map((param) => parseInt(param, 10));
   const requestBlockHeaders = {
     jsonrpc: "2.0",
-    id: "request-block-headers",
+    id: "get-block-headers",
     method: "blockchain.block.headers",
     params,
   };
 
+  const defaultParams = {
+    branch: [],
+    root: null,
+  };
+
   eRpc(requestBlockHeaders)
-    .then((json) =>
+    .then((json) => {
       res.send({
         ...json,
-      })
-    )
+        result: {
+          ...defaultParams,
+          ...json.result,
+        },
+      });
+    })
     .catch((err) => {
       res.status(err.code).end();
     });
 });
 
-//?height=1&tx_pos=2&merkle=true
-app.get("/txfrompos", (req, res) => {
-  const { height, tx_position, merkle } = req.query;
+app.post("/txfrompos", (req, res) => {
+  const { height, pos, merkle } = req.body;
 
-  if (!height || !tx_position) {
+  if (!height || !pos) {
     throw new Error("Missing parameters");
   }
 
-  const params = [height, tx_position].map((param) => parseInt(param, 10));
+  const params = [height, pos].map((param) => parseInt(param, 10));
 
   const requestTxFromPos = {
     jsonrpc: "2.0",
-    id: "tx-from-position",
+    id: "get-tx-from-pos",
     method: "blockchain.transaction.id_from_pos",
     params: [...params, merkle ? true : false],
   };
 
   eRpc(requestTxFromPos)
-    .then((json) =>
+    .then((json) => {
+      const response = merkle
+        ? {
+            ...json,
+            result: {
+              "tx-hash": json.result.tx_hash,
+              ...json.result,
+            },
+          }
+        : {
+            ...json,
+            result: {
+              merkle: [],
+              "tx-hash": json.result,
+            },
+          };
+
       res.send({
-        ...json,
-      })
-    )
+        ...response,
+      });
+    })
     .catch((err) => {
       res.status(err.code).end();
     });
@@ -469,7 +492,7 @@ app.get("/estimatefee/:confirmedBy", (req, res) => {
 
   const estimateFee = {
     jsonrpc: "2.0",
-    id: "estimate-fee",
+    id: "get-fee",
     method: "blockchain.estimatefee",
     params: [confirmedBy],
   };
@@ -488,7 +511,7 @@ app.get("/estimatefee/:confirmedBy", (req, res) => {
 app.get("/feehistogram", (req, res) => {
   const histogram = {
     jsonrpc: "2.0",
-    id: "estimate-fee",
+    id: "get-histogram",
     method: "mempool.get_fee_histogram",
   };
 
@@ -503,10 +526,11 @@ app.get("/feehistogram", (req, res) => {
     });
 });
 
-// psbt must be url encoded
+// psbt must be base64 encoded
 app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
   const { psbt, descriptors = [] } = req.params;
-  let params = [psbt];
+  const decodedPsbt = new Buffer.from(psbt, "base64").toString("ascii");
+  let params = [decodedPsbt];
 
   if (descriptors.length) {
     params.push(JSON.parse(descriptors));
@@ -520,11 +544,12 @@ app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
   };
 
   bRpc(updatepsbt)
-    .then((json) =>
+    .then((json) => {
+      console.log(json);
       res.send({
         ...json,
-      })
-    )
+      });
+    })
     .catch((err) => {
       res.status(err.code).end();
     });
