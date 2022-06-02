@@ -1,1 +1,0 @@
-bitcoin-cli -regtest loadwallet $1
