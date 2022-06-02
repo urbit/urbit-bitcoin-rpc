@@ -20,16 +20,17 @@ app.use(express.json());
 const identity = (x) => x;
 
 const getNetwork = (network) => {
-  if (network === "MAIN") {
-    bitcoin.networks.bitcoin;
+  const { bitcoin: bitcoinNetwork, testnet, regtest } = bitcoin.networks;
+
+  if (network === "REGTEST") {
+    return regtest;
   }
 
   if (network === "TESTNET") {
-    return bitcoin.networks.testnet;
+    return testnet;
   }
 
-  // regtest
-  return bitcoin.networks.regtest;
+  return bitcoinNetwork;
 };
 
 const network = getNetwork(process.env.BTC_NETWORK);
@@ -69,6 +70,7 @@ const eRpc = (rpcCall, addr) => {
       client.write("\r\n");
     });
     client.on("error", (err) => {
+      console.log(err);
       return reject({ code: 502, msg: "e-rpc error" });
     });
     client.on("data", (data) => {
@@ -405,10 +407,28 @@ app.get("/broadcasttx/:rawtx", (req, res) => {
     });
 });
 
+app.get("/feehistogram", (req, res) => {
+  const histogram = {
+    jsonrpc: "2.0",
+    id: "get-histogram",
+    method: "mempool.get_fee_histogram",
+  };
+
+  eRpc(histogram)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
 app.post("/blockheaders", (req, res) => {
   const { start, count, cp = 0 } = req.body;
 
-  if (!start || !count) {
+  if (typeof start === "undefined" || typeof count === "undefined") {
     throw new Error("Missing parameters");
   }
 
@@ -443,8 +463,8 @@ app.post("/blockheaders", (req, res) => {
 app.post("/txfrompos", (req, res) => {
   const { height, pos, merkle } = req.body;
 
-  if (!height || !pos) {
-    throw new Error("Missing parameters");
+  if (typeof height === "undefined" || typeof pos === "undefined") {
+    throw new Error(`Missing parameters`);
   }
 
   const params = [height, pos].map((param) => parseInt(param, 10));
@@ -479,15 +499,15 @@ app.post("/txfrompos", (req, res) => {
       });
     })
     .catch((err) => {
-      res.status(err.code).end();
+      res.status(err.code || 500).end();
     });
 });
 
-app.get("/estimatefee/:confirmedBy", (req, res) => {
-  const confirmedBy = parseInt(req.params.confirmedBy, 10);
+app.get("/estimatefee/:block", (req, res) => {
+  const confirmedBy = parseInt(req.params.block, 10);
 
-  if (!confirmedBy) {
-    throw new Error("Missing parameters");
+  if (isNaN(confirmedBy)) {
+    throw new Error("Missing parameter: block");
   }
 
   const estimateFee = {
@@ -508,27 +528,14 @@ app.get("/estimatefee/:confirmedBy", (req, res) => {
     });
 });
 
-app.get("/feehistogram", (req, res) => {
-  const histogram = {
-    jsonrpc: "2.0",
-    id: "get-histogram",
-    method: "mempool.get_fee_histogram",
-  };
-
-  eRpc(histogram)
-    .then((json) =>
-      res.send({
-        ...json,
-      })
-    )
-    .catch((err) => {
-      res.status(err.code).end();
-    });
-});
-
 // psbt must be base64 encoded
 app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
   const { psbt, descriptors = [] } = req.params;
+
+  if (!psbt) {
+    throw new Error("Missing parameter: psbt");
+  }
+
   const decodedPsbt = new Buffer.from(psbt, "base64").toString("ascii");
   let params = [decodedPsbt];
 
@@ -545,7 +552,6 @@ app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
 
   bRpc(updatepsbt)
     .then((json) => {
-      console.log(json);
       res.send({
         ...json,
       });
