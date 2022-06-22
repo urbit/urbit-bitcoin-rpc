@@ -13,16 +13,27 @@ const electrsPort = process.env.ELECTRS_PORT;
 // console.log(`INFO PROXY: btc rpc pass: ${btcCookiePass}`)
 console.log(`INFO PROXY: Electrs host: ${electrsHost}:${electrsPort}`);
 
-const network =
-  process.env.BTC_NETWORK == "TESTNET"
-    ? bitcoin.networks.testnet
-    : bitcoin.networks.bitcoin;
-
 const app = express();
 const port = 50002;
 app.use(express.json());
 
 const identity = (x) => x;
+
+const getNetwork = (network) => {
+  const { bitcoin: bitcoinNetwork, testnet, regtest } = bitcoin.networks;
+
+  if (network === "REGTEST") {
+    return regtest;
+  }
+
+  if (network === "TESTNET") {
+    return testnet;
+  }
+
+  return bitcoinNetwork;
+};
+
+const network = getNetwork(process.env.BTC_NETWORK);
 
 const addressToScriptHash = (address) => {
   let script = bitcoin.address.toOutputScript(address, network);
@@ -59,6 +70,7 @@ const eRpc = (rpcCall, addr) => {
       client.write("\r\n");
     });
     client.on("error", (err) => {
+      console.log(err);
       return reject({ code: 502, msg: "e-rpc error" });
     });
     client.on("data", (data) => {
@@ -391,6 +403,160 @@ app.get("/broadcasttx/:rawtx", (req, res) => {
     })
     .catch((err) => {
       console.log(err);
+      res.status(err.code).end();
+    });
+});
+
+app.get("/feehistogram", (req, res) => {
+  const histogram = {
+    jsonrpc: "2.0",
+    id: "get-histogram",
+    method: "mempool.get_fee_histogram",
+  };
+
+  eRpc(histogram)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+app.post("/blockheaders", (req, res) => {
+  const { start, count, cp = 0 } = req.body;
+
+  if (typeof start === "undefined" || typeof count === "undefined") {
+    throw new Error("Missing parameters");
+  }
+
+  const params = [start, count, cp].map((param) => parseInt(param, 10));
+  const requestBlockHeaders = {
+    jsonrpc: "2.0",
+    id: "get-block-headers",
+    method: "blockchain.block.headers",
+    params,
+  };
+
+  const defaultParams = {
+    branch: [],
+    root: null,
+  };
+
+  eRpc(requestBlockHeaders)
+    .then((json) => {
+      res.send({
+        ...json,
+        result: {
+          ...defaultParams,
+          ...json.result,
+        },
+      });
+    })
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+app.post("/txfrompos", (req, res) => {
+  const { height, pos, merkle } = req.body;
+
+  if (typeof height === "undefined" || typeof pos === "undefined") {
+    throw new Error(`Missing parameters`);
+  }
+
+  const params = [height, pos].map((param) => parseInt(param, 10));
+
+  const requestTxFromPos = {
+    jsonrpc: "2.0",
+    id: "get-tx-from-pos",
+    method: "blockchain.transaction.id_from_pos",
+    params: [...params, merkle ? true : false],
+  };
+
+  eRpc(requestTxFromPos)
+    .then((json) => {
+      const response = merkle
+        ? {
+            ...json,
+            result: {
+              "tx-hash": json.result.tx_hash,
+              ...json.result,
+            },
+          }
+        : {
+            ...json,
+            result: {
+              merkle: [],
+              "tx-hash": json.result,
+            },
+          };
+
+      res.send({
+        ...response,
+      });
+    })
+    .catch((err) => {
+      res.status(err.code || 500).end();
+    });
+});
+
+app.get("/estimatefee/:block", (req, res) => {
+  const confirmedBy = parseInt(req.params.block, 10);
+
+  if (isNaN(confirmedBy)) {
+    throw new Error("Missing parameter: block");
+  }
+
+  const estimateFee = {
+    jsonrpc: "2.0",
+    id: "get-fee",
+    method: "blockchain.estimatefee",
+    params: [confirmedBy],
+  };
+
+  eRpc(estimateFee)
+    .then((json) =>
+      res.send({
+        ...json,
+      })
+    )
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
+// psbt must be base64 encoded
+app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
+  const { psbt, descriptors = [] } = req.params;
+
+  if (!psbt) {
+    throw new Error("Missing parameter: psbt");
+  }
+
+  const decodedPsbt = new Buffer.from(psbt, "base64").toString("ascii");
+  let params = [decodedPsbt];
+
+  if (descriptors.length) {
+    params.push(JSON.parse(descriptors));
+  }
+
+  const updatepsbt = {
+    jsonrpc: "2.0",
+    id: "update-psbt",
+    method: "utxoupdatepsbt",
+    params,
+  };
+
+  bRpc(updatepsbt)
+    .then((json) => {
+      res.send({
+        ...json,
+      });
+    })
+    .catch((err) => {
       res.status(err.code).end();
     });
 });
