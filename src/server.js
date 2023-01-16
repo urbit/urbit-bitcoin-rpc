@@ -561,4 +561,31 @@ app.get("/updatepsbt/:psbt/:descriptors?", (req, res) => {
     });
 });
 
+app.get("/getblocktxs/:blockhash", (req, res) => {
+  const { blockhash } = req.params;
+
+  if (!blockhash) {
+    throw new Error("Missing parameter: blockhash");
+  }
+
+  const blocktxs = {
+    jsonrpc: "2.0",
+    id: "get-block-txs",
+    method: "getblock",
+    params: [blockhash, 2]
+  }
+
+  bRpc(blocktxs)
+    .then((json) => {
+      const txs = json.result.tx.map(tx => ({ rawtx: tx.hex, txid: tx.txid }))
+      res.send({
+        ...json,
+        result: { blockhash, txs }
+      });
+    })
+    .catch((err) => {
+      res.status(err.code).end();
+    });
+});
+
 app.listen(port, () => console.log(`Electrs proxy listening on port ${port}`));
